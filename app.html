@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Come-Come - Family meal tracking for neuro-divergent children">
+    <title>Come-Come</title>
+    
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/styles.css">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="assets/manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen">
+            <main class="container">
+                <article>
+                    <header>
+                        <h1>🍽️ Come-Come</h1>
+                        <p>Select your role to continue</p>
+                    </header>
+                    
+                    <div class="role-selector">
+                        <button type="button" class="role-btn" data-role="child">
+                            <span class="role-icon">🧒</span>
+                            <span class="role-label">Child</span>
+                        </button>
+                        <button type="button" class="role-btn" data-role="guardian">
+                            <span class="role-icon">👫</span>
+                            <span class="role-label">Guardian</span>
+                        </button>
+                    </div>
+                    
+                    <form id="loginForm" style="display: none;">
+                        <label for="userId">
+                            Select User
+                            <select id="userId" required></select>
+                        </label>
+                        
+                        <label for="pin">
+                            PIN (4 digits)
+                            <input type="password" id="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
+                        </label>
+                        
+                        <button type="submit">Log In</button>
+                        <button type="button" onclick="app.showRoleSelector()">Back</button>
+                    </form>
+                </article>
+            </main>
+        </div>
+        
+        <!-- Main App Screen -->
+        <div id="mainScreen" class="screen" style="display: none;">
+            <nav class="container-fluid">
+                <ul>
+                    <li><strong id="appTitle">Come-Come</strong></li>
+                </ul>
+                <ul>
+                    <li>
+                        <select id="localeSwitcher" onchange="app.switchLocale()" title="Language">
+                            <!-- Options populated dynamically from /i18n/locales by loadLocale() -->
+                        </select>
+                    </li>
+                    <li><span id="userGreeting"></span></li>
+                    <li><button class="secondary" onclick="app.logout()">Logout</button></li>
+                </ul>
+            </nav>
+            
+            <main class="container">
+                <!-- Date Selector -->
+                <div class="date-selector">
+                    <label for="selectedDate">
+                        Date
+                        <input type="date" id="selectedDate" onchange="app.loadMealsForDate()">
+                    </label>
+                </div>
+                
+                <!-- Meal Cards -->
+                <div id="mealCards" class="meal-grid"></div>
+                
+                <!-- Daily Logs -->
+                <details id="todaysLogs" open>
+                    <summary id="todaysLogsLabel">Logs for Today</summary>
+                    <h5>Meals</h5>
+                    <div id="todaysLogsContent"></div>
+                    <h5 id="medicationSectionHeader">Medications</h5>
+                    <div id="todaysMedsContent"><p>No medication logs.</p></div>
+                    <h5>Weight</h5>
+                    <div id="todaysWeightContent"><p>No weight logged.</p></div>
+                </details>
+                
+                <!-- History -->
+                <details id="history">
+                    <summary>History (Last 7 Days)</summary>
+                    <div id="historyContent"></div>
+                </details>
+                
+                <!-- Guardian Section -->
+                <div id="guardianSection" style="display: none;">
+                    <details>
+                        <summary>Guardian Tools</summary>
+                        
+                        <details>
+                            <summary>Settings</summary>
+                            <label>
+                                <input type="checkbox" id="childSeesMedicationsToggle" onchange="app.toggleMedicationVisibility()">
+                                Children can see medication logs
+                            </label>
+                            <p><small>When disabled, the medication section is completely hidden for child accounts.</small></p>
+                        </details>
+                        
+                        <details>
+                            <summary>Medication Log</summary>
+                            <form id="medicationForm" onsubmit="app.logMedication(event)">
+                                <label>
+                                    Medication
+                                    <select name="medication_id" required></select>
+                                </label>
+                                <label>
+                                    Date
+                                    <input type="date" name="log_date" required>
+                                </label>
+                                <label>
+                                    Time (optional)
+                                    <input type="time" name="log_time">
+                                </label>
+                                <label>
+                                    Status
+                                    <select name="status" required>
+                                        <option value="taken">Taken</option>
+                                        <option value="missed">Missed</option>
+                                        <option value="skipped">Skipped</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Notes
+                                    <textarea name="notes" maxlength="500"></textarea>
+                                </label>
+                                <button type="submit">Log Medication</button>
+                            </form>
+                        </details>
+                        
+                        <details>
+                            <summary>Weight Log</summary>
+                            <form id="weightForm" onsubmit="app.logWeight(event)">
+                                <label>
+                                    Date
+                                    <input type="date" name="weight_date" id="weightDate" required>
+                                </label>
+                                <label>
+                                    Weight (kg)
+                                    <input type="number" step="0.01" min="0.01" max="999.99" name="weight_kg" required>
+                                </label>
+                                <button type="submit">Log Weight</button>
+                            </form>
+                        </details>
+                        
+                        <details>
+                            <summary>Guest Tokens (Clinician Access)</summary>
+                            <button onclick="app.showCreateTokenForm()">Create New Token</button>
+                            <div id="tokenList"></div>
+                        </details>
+                        
+                        <details>
+                            <summary>Export Report</summary>
+                            <label>
+                                Report Range
+                                <select id="reportRange">
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="all">Whole History (max 365 days)</option>
+                                </select>
+                            </label>
+                            <button onclick="app.exportPDF()">Download PDF Report</button>
+                        </details>
+                        
+                        <details>
+                            <summary>Backup & Restore</summary>
+                            <h4>Create Backup</h4>
+                            <button onclick="app.createBackup()">Create Backup Now</button>
+                            
+                            <h4>Available Backups</h4>
+                            <div id="backupList"></div>
+                            
+                            <h4>Database Statistics</h4>
+                            <div id="dbStats"></div>
+                            <button onclick="app.vacuumDatabase()">Optimize Database (VACUUM)</button>
+                        </details>
+                        
+                        <details>
+                            <summary>Meal Templates</summary>
+                            <div id="templateCatalog"></div>
+                            <button onclick="app.showAddTemplateForm()">Add New Template</button>
+                        </details>
+                        
+                        <details>
+                            <summary>Food Catalog</summary>
+                            <div id="foodCatalog"></div>
+                            <button onclick="app.showAddFoodForm()">Add New Food</button>
+                        </details>
+                        
+                        <details>
+                            <summary>Medication Catalog</summary>
+                            <div id="medicationCatalog"></div>
+                            <button onclick="app.showAddMedicationForm()">Add New Medication</button>
+                        </details>
+                        
+                        <details>
+                            <summary>User Management</summary>
+                            <div id="userManagement"></div>
+                            <div class="user-mgmt-actions">
+                                <button onclick="app.showAddChildForm()">Add Child</button>
+                                <button class="secondary" onclick="app.showAddGuardianForm()">Add Guardian</button>
+                            </div>
+                        </details>
+                        
+                        <details>
+                            <summary>Translations (i18n)</summary>
+                            <div>
+                                <label>
+                                    Locale
+                                    <select id="i18nLocaleSelect" onchange="app.loadTranslationsAdmin()">
+                                        <!-- Options populated dynamically from /i18n/locales by loadLocale() -->
+                                    </select>
+                                </label>
+                                <div id="translationsTable"></div>
+                                <h5>Add / Edit Translation</h5>
+                                <form id="translationForm" onsubmit="app.submitTranslation(event)">
+                                    <label>
+                                        Key
+                                        <input type="text" name="t_key" id="translationKey" required placeholder="e.g. meal.breakfast">
+                                    </label>
+                                    <label>
+                                        Value
+                                        <input type="text" name="t_value" id="translationValue" required placeholder="Translated text">
+                                    </label>
+                                    <button type="submit">Save Translation</button>
+                                </form>
+                            </div>
+                        </details>
+                    </details>
+                </div>
+            </main>
+        </div>
+        
+        <!-- Meal Modal -->
+        <dialog id="mealModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closeMealModal()"></button>
+                    <h3 id="mealModalTitle"></h3>
+                </header>
+                <form id="mealForm" onsubmit="app.submitMeal(event)">
+                    <div id="foodQuantityInputs"></div>
+                    <label>
+                        Notes
+                        <textarea name="note" maxlength="500"></textarea>
+                    </label>
+                    <footer>
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeMealModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+        
+        <!-- User Form Modal -->
+        <dialog id="userModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closeUserModal()"></button>
+                    <h3 id="userModalTitle">Add User</h3>
+                </header>
+                <form id="userForm" onsubmit="app.submitUser(event)">
+                    <input type="hidden" name="form_role" id="userFormRole">
+                    <input type="hidden" name="form_user_id" id="userFormUserId">
+                    <input type="hidden" name="form_mode" id="userFormMode">
+                    <label>
+                        Name
+                        <input type="text" name="name" id="userFormName" required minlength="1" maxlength="100">
+                    </label>
+                    <div id="userFormPinFields">
+                        <label>
+                            PIN (4 digits)
+                            <input type="password" name="pin" id="userFormPin" inputmode="numeric" pattern="\d{4}" maxlength="4">
+                        </label>
+                        <label>
+                            Confirm PIN
+                            <input type="password" name="pin_confirm" id="userFormPinConfirm" inputmode="numeric" pattern="\d{4}" maxlength="4">
+                        </label>
+                    </div>
+                    <label>
+                        Locale
+                        <select name="locale" id="userFormLocale">
+                            <option value="en-UK">English (UK)</option>
+                            <option value="pt-PT">Português (PT)</option>
+                        </select>
+                    </label>
+                    <footer>
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeUserModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+        
+        <!-- PIN Reset Modal -->
+        <dialog id="pinModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closePinModal()"></button>
+                    <h3 id="pinModalTitle">Reset PIN</h3>
+                </header>
+                <form id="pinForm" onsubmit="app.submitPinReset(event)">
+                    <input type="hidden" name="pin_user_id" id="pinFormUserId">
+                    <label>
+                        New PIN (4 digits)
+                        <input type="password" name="new_pin" id="pinFormNewPin" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
+                    </label>
+                    <label>
+                        Confirm New PIN
+                        <input type="password" name="new_pin_confirm" id="pinFormNewPinConfirm" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
+                    </label>
+                    <footer>
+                        <button type="submit">Reset PIN</button>
+                        <button type="button" class="secondary" onclick="app.closePinModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+        
+        <!-- Template Form Modal -->
+        <dialog id="templateModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closeTemplateModal()"></button>
+                    <h3 id="templateModalTitle">Add Meal Template</h3>
+                </header>
+                <form id="templateCatalogForm" onsubmit="app.submitTemplate(event)">
+                    <input type="hidden" name="tpl_id" id="tplFormId">
+                    <input type="hidden" name="tpl_mode" id="tplFormMode">
+                    <label>
+                        Template Name
+                        <input type="text" name="tpl_name" id="tplFormName" required minlength="1" maxlength="100" placeholder="e.g. Breakfast">
+                    </label>
+                    <label>
+                        Icon (emoji)
+                        <input type="text" name="tpl_icon" id="tplFormIcon" maxlength="10" placeholder="e.g. 🍞">
+                    </label>
+                    <label>
+                        Sort Order
+                        <input type="number" name="tpl_sort" id="tplFormSort" min="1" max="99" placeholder="Auto">
+                    </label>
+                    <footer>
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeTemplateModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+        
+        <!-- Food Form Modal -->
+        <dialog id="foodModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closeFoodModal()"></button>
+                    <h3 id="foodModalTitle">Add Food</h3>
+                </header>
+                <form id="foodForm" onsubmit="app.submitFood(event)">
+                    <input type="hidden" name="food_id" id="foodFormId">
+                    <input type="hidden" name="food_mode" id="foodFormMode">
+                    <label>
+                        Food Name
+                        <input type="text" name="food_name" id="foodFormName" required minlength="1" maxlength="100">
+                    </label>
+                    <label>
+                        Category
+                        <select name="food_category" id="foodFormCategory" required>
+                            <option value="starter">Starter</option>
+                            <option value="main">Main</option>
+                            <option value="dessert">Dessert</option>
+                            <option value="drink">Drink</option>
+                            <option value="snack">Snack</option>
+                        </select>
+                    </label>
+                    <footer>
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeFoodModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+        
+        <!-- Medication Form Modal -->
+        <dialog id="medicationModal">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" onclick="app.closeMedicationModal()"></button>
+                    <h3 id="medicationModalTitle">Add Medication</h3>
+                </header>
+                <form id="medicationCatalogForm" onsubmit="app.submitMedicationCatalog(event)">
+                    <input type="hidden" name="med_id" id="medFormId">
+                    <input type="hidden" name="med_mode" id="medFormMode">
+                    <label>
+                        Medication Name
+                        <input type="text" name="med_name" id="medFormName" required minlength="1" maxlength="200" placeholder="e.g. Ritalin">
+                    </label>
+                    <label>
+                        Dose
+                        <input type="text" name="med_dose" id="medFormDose" required minlength="1" maxlength="100" placeholder="e.g. 10mg">
+                    </label>
+                    <label>
+                        Notes (optional)
+                        <textarea name="med_notes" id="medFormNotes" maxlength="500" placeholder="e.g. Take with food"></textarea>
+                    </label>
+                    <footer>
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeMedicationModal()">Cancel</button>
+                    </footer>
+                </form>
+            </article>
+        </dialog>
+    </div>
+    
+    <script src="assets/app.js?v=0.170"></script>
+</body>
+</html>
