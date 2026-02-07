@@ -49,7 +49,7 @@ class MealAPI {
         
         // Get meal logs for the day
         $meals = db()->query(
-            "SELECT ml.*, mt.name as meal_name, mt.icon as meal_icon,
+            "SELECT ml.*, mt.name as meal_name, mt.icon as meal_icon, mt.translation_key as meal_translation_key,
                     ml.reviewed_by IS NOT NULL as is_reviewed
              FROM meal_logs ml
              JOIN meal_templates mt ON ml.meal_template_id = mt.id
@@ -1318,7 +1318,7 @@ class HistoryAPI {
         $meals = db()->query(
             "SELECT ml.id, ml.log_date, ml.meal_template_id, ml.note,
                     ml.reviewed_by, ml.reviewed_at, ml.voided_at,
-                    mt.name as meal_name, mt.icon as meal_icon
+                    mt.name as meal_name, mt.icon as meal_icon, mt.translation_key as meal_translation_key
              FROM meal_logs ml
              LEFT JOIN meal_templates mt ON ml.meal_template_id = mt.id
              WHERE ml.child_id = ? AND ml.log_date BETWEEN ? AND ? AND ml.voided_at IS NULL

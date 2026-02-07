@@ -10,15 +10,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     
     <!-- Custom styles -->
-    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="/assets/styles.css">
     
     <!-- PWA manifest -->
-    <link rel="manifest" href="assets/manifest.json">
+    <link rel="manifest" href="/assets/manifest.json">
     <meta name="theme-color" content="#4CAF50">
     
     <!-- Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
-    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
 </head>
 <body>
     <div id="app">
@@ -27,34 +27,34 @@
             <main class="container">
                 <article>
                     <header>
-                        <h1>🍽️ Come-Come</h1>
-                        <p>Select your role to continue</p>
+                        <h1>🍽️ <span data-i18n="app.name">Come-Come</span></h1>
+                        <p data-i18n="login.select_role">Select your role to continue</p>
                     </header>
                     
                     <div class="role-selector">
                         <button type="button" class="role-btn" data-role="child">
                             <span class="role-icon">🧒</span>
-                            <span class="role-label">Child</span>
+                            <span class="role-label" data-i18n="login.child">Child</span>
                         </button>
                         <button type="button" class="role-btn" data-role="guardian">
                             <span class="role-icon">👫</span>
-                            <span class="role-label">Guardian</span>
+                            <span class="role-label" data-i18n="login.guardian">Guardian</span>
                         </button>
                     </div>
                     
                     <form id="loginForm" style="display: none;">
                         <label for="userId">
-                            Select User
+                            <span data-i18n="login.select_user">Select User</span>
                             <select id="userId" required></select>
                         </label>
                         
                         <label for="pin">
-                            PIN (4 digits)
+                            <span data-i18n="login.pin_label">PIN (4 digits)</span>
                             <input type="password" id="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
                         </label>
                         
-                        <button type="submit">Log In</button>
-                        <button type="button" onclick="app.showRoleSelector()">Back</button>
+                        <button type="submit" data-i18n="login.submit">Log In</button>
+                        <button type="button" onclick="app.showRoleSelector()" data-i18n="login.back">Back</button>
                     </form>
                 </article>
             </main>
@@ -64,7 +64,7 @@
         <div id="mainScreen" class="screen" style="display: none;">
             <nav class="container-fluid">
                 <ul>
-                    <li><strong id="appTitle">Come-Come</strong></li>
+                    <li><strong id="appTitle" data-i18n="app.name">Come-Come</strong></li>
                 </ul>
                 <ul>
                     <li>
@@ -73,7 +73,7 @@
                         </select>
                     </li>
                     <li><span id="userGreeting"></span></li>
-                    <li><button class="secondary" onclick="app.logout()">Logout</button></li>
+                    <li><button class="secondary" onclick="app.logout()" data-i18n="logout">Logout</button></li>
                 </ul>
             </nav>
             
@@ -81,7 +81,7 @@
                 <!-- Date Selector -->
                 <div class="date-selector">
                     <label for="selectedDate">
-                        Date
+                        <span data-i18n="date">Date</span>
                         <input type="date" id="selectedDate" onchange="app.loadMealsForDate()">
                     </label>
                 </div>
@@ -91,160 +91,160 @@
                 
                 <!-- Daily Logs -->
                 <details id="todaysLogs" open>
-                    <summary id="todaysLogsLabel">Logs for Today</summary>
-                    <h5>Meals</h5>
+                    <summary id="todaysLogsLabel" data-i18n="logs.today">Logs for Today</summary>
+                    <h5 data-i18n="logs.meals">Meals</h5>
                     <div id="todaysLogsContent"></div>
-                    <h5 id="medicationSectionHeader">Medications</h5>
-                    <div id="todaysMedsContent"><p>No medication logs.</p></div>
-                    <h5>Weight</h5>
-                    <div id="todaysWeightContent"><p>No weight logged.</p></div>
+                    <h5 id="medicationSectionHeader" data-i18n="logs.medications">Medications</h5>
+                    <div id="todaysMedsContent"><p data-i18n="logs.no_medications">No medication logs.</p></div>
+                    <h5 data-i18n="logs.weight">Weight</h5>
+                    <div id="todaysWeightContent"><p data-i18n="logs.no_weight">No weight logged.</p></div>
                 </details>
                 
                 <!-- History -->
                 <details id="history">
-                    <summary>History (Last 7 Days)</summary>
+                    <summary data-i18n="logs.history">History (Last 7 Days)</summary>
                     <div id="historyContent"></div>
                 </details>
                 
                 <!-- Guardian Section -->
                 <div id="guardianSection" style="display: none;">
                     <details>
-                        <summary>Guardian Tools</summary>
+                        <summary data-i18n="guardian.tools">Guardian Tools</summary>
                         
                         <details>
-                            <summary>Settings</summary>
+                            <summary data-i18n="settings">Settings</summary>
                             <label>
                                 <input type="checkbox" id="childSeesMedicationsToggle" onchange="app.toggleMedicationVisibility()">
-                                Children can see medication logs
+                                <span data-i18n="settings.child_sees_meds">Children can see medication logs</span>
                             </label>
-                            <p><small>When disabled, the medication section is completely hidden for child accounts.</small></p>
+                            <p><small data-i18n="settings.child_sees_meds_help">When disabled, the medication section is completely hidden for child accounts.</small></p>
                         </details>
                         
                         <details>
-                            <summary>Medication Log</summary>
+                            <summary data-i18n="guardian.medication">Medication Log</summary>
                             <form id="medicationForm" onsubmit="app.logMedication(event)">
                                 <label>
-                                    Medication
+                                    <span data-i18n="medication.medication">Medication</span>
                                     <select name="medication_id" required></select>
                                 </label>
                                 <label>
-                                    Date
+                                    <span data-i18n="medication.date">Date</span>
                                     <input type="date" name="log_date" required>
                                 </label>
                                 <label>
-                                    Time (optional)
+                                    <span data-i18n="medication.time">Time (optional)</span>
                                     <input type="time" name="log_time">
                                 </label>
                                 <label>
-                                    Status
+                                    <span data-i18n="medication.status">Status</span>
                                     <select name="status" required>
-                                        <option value="taken">Taken</option>
-                                        <option value="missed">Missed</option>
-                                        <option value="skipped">Skipped</option>
+                                        <option value="taken" data-i18n="medication.status.taken">Taken</option>
+                                        <option value="missed" data-i18n="medication.status.missed">Missed</option>
+                                        <option value="skipped" data-i18n="medication.status.skipped">Skipped</option>
                                     </select>
                                 </label>
                                 <label>
-                                    Notes
+                                    <span data-i18n="medication.notes">Notes</span>
                                     <textarea name="notes" maxlength="500"></textarea>
                                 </label>
-                                <button type="submit">Log Medication</button>
+                                <button type="submit" data-i18n="medication.log">Log Medication</button>
                             </form>
                         </details>
                         
                         <details>
-                            <summary>Weight Log</summary>
+                            <summary data-i18n="guardian.weight">Weight Log</summary>
                             <form id="weightForm" onsubmit="app.logWeight(event)">
                                 <label>
-                                    Date
+                                    <span data-i18n="date">Date</span>
                                     <input type="date" name="weight_date" id="weightDate" required>
                                 </label>
                                 <label>
-                                    Weight (kg)
+                                    <span data-i18n="weight.kg">Weight (kg)</span>
                                     <input type="number" step="0.01" min="0.01" max="999.99" name="weight_kg" required>
                                 </label>
-                                <button type="submit">Log Weight</button>
+                                <button type="submit" data-i18n="weight.log">Log Weight</button>
                             </form>
                         </details>
                         
                         <details>
-                            <summary>Guest Tokens (Clinician Access)</summary>
-                            <button onclick="app.showCreateTokenForm()">Create New Token</button>
+                            <summary data-i18n="guardian.tokens">Guest Tokens (Clinician Access)</summary>
+                            <button onclick="app.showCreateTokenForm()" data-i18n="token.create">Create New Token</button>
                             <div id="tokenList"></div>
                         </details>
                         
                         <details>
-                            <summary>Export Report</summary>
+                            <summary data-i18n="guardian.export">Export Report</summary>
                             <label>
-                                Report Range
+                                <span data-i18n="report.range">Report Range</span>
                                 <select id="reportRange">
-                                    <option value="30">Last 30 Days</option>
-                                    <option value="all">Whole History (max 365 days)</option>
+                                    <option value="30" data-i18n="report.30days">Last 30 Days</option>
+                                    <option value="all" data-i18n="report.all">Whole History (max 365 days)</option>
                                 </select>
                             </label>
-                            <button onclick="app.exportPDF()">Download PDF Report</button>
+                            <button onclick="app.exportPDF()" data-i18n="report.download">Download PDF Report</button>
                         </details>
                         
                         <details>
-                            <summary>Backup & Restore</summary>
-                            <h4>Create Backup</h4>
-                            <button onclick="app.createBackup()">Create Backup Now</button>
+                            <summary data-i18n="guardian.backup">Backup & Restore</summary>
+                            <h4 data-i18n="backup.create">Create Backup</h4>
+                            <button onclick="app.createBackup()" data-i18n="backup.create_now">Create Backup Now</button>
                             
-                            <h4>Available Backups</h4>
+                            <h4 data-i18n="backup.available">Available Backups</h4>
                             <div id="backupList"></div>
                             
-                            <h4>Database Statistics</h4>
+                            <h4 data-i18n="backup.stats">Database Statistics</h4>
                             <div id="dbStats"></div>
-                            <button onclick="app.vacuumDatabase()">Optimize Database (VACUUM)</button>
+                            <button onclick="app.vacuumDatabase()" data-i18n="backup.vacuum">Optimize Database (VACUUM)</button>
                         </details>
                         
                         <details>
-                            <summary>Meal Templates</summary>
+                            <summary data-i18n="guardian.templates">Meal Templates</summary>
                             <div id="templateCatalog"></div>
-                            <button onclick="app.showAddTemplateForm()">Add New Template</button>
+                            <button onclick="app.showAddTemplateForm()" data-i18n="template.add">Add New Template</button>
                         </details>
                         
                         <details>
-                            <summary>Food Catalog</summary>
+                            <summary data-i18n="guardian.food_catalog">Food Catalog</summary>
                             <div id="foodCatalog"></div>
-                            <button onclick="app.showAddFoodForm()">Add New Food</button>
+                            <button onclick="app.showAddFoodForm()" data-i18n="food.add">Add New Food</button>
                         </details>
                         
                         <details>
-                            <summary>Medication Catalog</summary>
+                            <summary data-i18n="guardian.medication_catalog">Medication Catalog</summary>
                             <div id="medicationCatalog"></div>
-                            <button onclick="app.showAddMedicationForm()">Add New Medication</button>
+                            <button onclick="app.showAddMedicationForm()" data-i18n="medication.add">Add New Medication</button>
                         </details>
                         
                         <details>
-                            <summary>User Management</summary>
+                            <summary data-i18n="guardian.users">User Management</summary>
                             <div id="userManagement"></div>
                             <div class="user-mgmt-actions">
-                                <button onclick="app.showAddChildForm()">Add Child</button>
-                                <button class="secondary" onclick="app.showAddGuardianForm()">Add Guardian</button>
+                                <button onclick="app.showAddChildForm()" data-i18n="user.add_child">Add Child</button>
+                                <button class="secondary" onclick="app.showAddGuardianForm()" data-i18n="user.add_guardian">Add Guardian</button>
                             </div>
                         </details>
                         
                         <details>
-                            <summary>Translations (i18n)</summary>
+                            <summary data-i18n="guardian.translations">Translations (i18n)</summary>
                             <div>
                                 <label>
-                                    Locale
+                                    <span data-i18n="i18n.locale">Locale</span>
                                     <select id="i18nLocaleSelect" onchange="app.loadTranslationsAdmin()">
                                         <!-- Options populated dynamically from /i18n/locales by loadLocale() -->
                                     </select>
                                 </label>
                                 <div id="translationsTable"></div>
-                                <h5>Add / Edit Translation</h5>
+                                <h5 data-i18n="i18n.add_edit">Add / Edit Translation</h5>
                                 <form id="translationForm" onsubmit="app.submitTranslation(event)">
                                     <label>
-                                        Key
+                                        <span data-i18n="i18n.key">Key</span>
                                         <input type="text" name="t_key" id="translationKey" required placeholder="e.g. meal.breakfast">
                                     </label>
                                     <label>
-                                        Value
+                                        <span data-i18n="i18n.value">Value</span>
                                         <input type="text" name="t_value" id="translationValue" required placeholder="Translated text">
                                     </label>
-                                    <button type="submit">Save Translation</button>
+                                    <button type="submit" data-i18n="i18n.save">Save Translation</button>
                                 </form>
                             </div>
                         </details>
@@ -263,12 +263,12 @@
                 <form id="mealForm" onsubmit="app.submitMeal(event)">
                     <div id="foodQuantityInputs"></div>
                     <label>
-                        Notes
+                        <span data-i18n="meal.notes">Notes</span>
                         <textarea name="note" maxlength="500"></textarea>
                     </label>
                     <footer>
-                        <button type="submit">Save</button>
-                        <button type="button" class="secondary" onclick="app.closeMealModal()">Cancel</button>
+                        <button type="submit" data-i18n="meal.save">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeMealModal()" data-i18n="meal.cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
@@ -279,36 +279,36 @@
             <article>
                 <header>
                     <button aria-label="Close" rel="prev" onclick="app.closeUserModal()"></button>
-                    <h3 id="userModalTitle">Add User</h3>
+                    <h3 id="userModalTitle" data-i18n="user.add">Add User</h3>
                 </header>
                 <form id="userForm" onsubmit="app.submitUser(event)">
                     <input type="hidden" name="form_role" id="userFormRole">
                     <input type="hidden" name="form_user_id" id="userFormUserId">
                     <input type="hidden" name="form_mode" id="userFormMode">
                     <label>
-                        Name
+                        <span data-i18n="user.name">Name</span>
                         <input type="text" name="name" id="userFormName" required minlength="1" maxlength="100">
                     </label>
                     <div id="userFormPinFields">
                         <label>
-                            PIN (4 digits)
+                            <span data-i18n="login.pin_label">PIN (4 digits)</span>
                             <input type="password" name="pin" id="userFormPin" inputmode="numeric" pattern="\d{4}" maxlength="4">
                         </label>
                         <label>
-                            Confirm PIN
+                            <span data-i18n="user.pin_confirm">Confirm PIN</span>
                             <input type="password" name="pin_confirm" id="userFormPinConfirm" inputmode="numeric" pattern="\d{4}" maxlength="4">
                         </label>
                     </div>
                     <label>
-                        Locale
+                        <span data-i18n="i18n.locale">Locale</span>
                         <select name="locale" id="userFormLocale">
                             <option value="en-UK">English (UK)</option>
                             <option value="pt-PT">Português (PT)</option>
                         </select>
                     </label>
                     <footer>
-                        <button type="submit">Save</button>
-                        <button type="button" class="secondary" onclick="app.closeUserModal()">Cancel</button>
+                        <button type="submit" data-i18n="save">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeUserModal()" data-i18n="cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
@@ -319,21 +319,21 @@
             <article>
                 <header>
                     <button aria-label="Close" rel="prev" onclick="app.closePinModal()"></button>
-                    <h3 id="pinModalTitle">Reset PIN</h3>
+                    <h3 id="pinModalTitle" data-i18n="user.reset_pin">Reset PIN</h3>
                 </header>
                 <form id="pinForm" onsubmit="app.submitPinReset(event)">
                     <input type="hidden" name="pin_user_id" id="pinFormUserId">
                     <label>
-                        New PIN (4 digits)
+                        <span data-i18n="user.new_pin">New PIN (4 digits)</span>
                         <input type="password" name="new_pin" id="pinFormNewPin" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
                     </label>
                     <label>
-                        Confirm New PIN
+                        <span data-i18n="user.confirm_new_pin">Confirm New PIN</span>
                         <input type="password" name="new_pin_confirm" id="pinFormNewPinConfirm" inputmode="numeric" pattern="\d{4}" maxlength="4" required>
                     </label>
                     <footer>
-                        <button type="submit">Reset PIN</button>
-                        <button type="button" class="secondary" onclick="app.closePinModal()">Cancel</button>
+                        <button type="submit" data-i18n="user.reset_pin">Reset PIN</button>
+                        <button type="button" class="secondary" onclick="app.closePinModal()" data-i18n="cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
@@ -344,26 +344,26 @@
             <article>
                 <header>
                     <button aria-label="Close" rel="prev" onclick="app.closeTemplateModal()"></button>
-                    <h3 id="templateModalTitle">Add Meal Template</h3>
+                    <h3 id="templateModalTitle" data-i18n="template.add">Add Meal Template</h3>
                 </header>
                 <form id="templateCatalogForm" onsubmit="app.submitTemplate(event)">
                     <input type="hidden" name="tpl_id" id="tplFormId">
                     <input type="hidden" name="tpl_mode" id="tplFormMode">
                     <label>
-                        Template Name
+                        <span data-i18n="template.name">Template Name</span>
                         <input type="text" name="tpl_name" id="tplFormName" required minlength="1" maxlength="100" placeholder="e.g. Breakfast">
                     </label>
                     <label>
-                        Icon (emoji)
+                        <span data-i18n="template.icon">Icon (emoji)</span>
                         <input type="text" name="tpl_icon" id="tplFormIcon" maxlength="10" placeholder="e.g. 🍞">
                     </label>
                     <label>
-                        Sort Order
+                        <span data-i18n="template.sort">Sort Order</span>
                         <input type="number" name="tpl_sort" id="tplFormSort" min="1" max="99" placeholder="Auto">
                     </label>
                     <footer>
-                        <button type="submit">Save</button>
-                        <button type="button" class="secondary" onclick="app.closeTemplateModal()">Cancel</button>
+                        <button type="submit" data-i18n="save">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeTemplateModal()" data-i18n="cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
@@ -374,28 +374,28 @@
             <article>
                 <header>
                     <button aria-label="Close" rel="prev" onclick="app.closeFoodModal()"></button>
-                    <h3 id="foodModalTitle">Add Food</h3>
+                    <h3 id="foodModalTitle" data-i18n="food.add">Add Food</h3>
                 </header>
                 <form id="foodForm" onsubmit="app.submitFood(event)">
                     <input type="hidden" name="food_id" id="foodFormId">
                     <input type="hidden" name="food_mode" id="foodFormMode">
                     <label>
-                        Food Name
+                        <span data-i18n="food.name">Food Name</span>
                         <input type="text" name="food_name" id="foodFormName" required minlength="1" maxlength="100">
                     </label>
                     <label>
-                        Category
+                        <span data-i18n="food.category">Category</span>
                         <select name="food_category" id="foodFormCategory" required>
-                            <option value="starter">Starter</option>
-                            <option value="main">Main</option>
-                            <option value="dessert">Dessert</option>
-                            <option value="drink">Drink</option>
-                            <option value="snack">Snack</option>
+                            <option value="starter" data-i18n="food.category.starter">Starter</option>
+                            <option value="main" data-i18n="food.category.main">Main</option>
+                            <option value="dessert" data-i18n="food.category.dessert">Dessert</option>
+                            <option value="drink" data-i18n="food.category.drink">Drink</option>
+                            <option value="snack" data-i18n="food.category.snack">Snack</option>
                         </select>
                     </label>
                     <footer>
-                        <button type="submit">Save</button>
-                        <button type="button" class="secondary" onclick="app.closeFoodModal()">Cancel</button>
+                        <button type="submit" data-i18n="save">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeFoodModal()" data-i18n="cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
@@ -406,32 +406,32 @@
             <article>
                 <header>
                     <button aria-label="Close" rel="prev" onclick="app.closeMedicationModal()"></button>
-                    <h3 id="medicationModalTitle">Add Medication</h3>
+                    <h3 id="medicationModalTitle" data-i18n="medication.add">Add Medication</h3>
                 </header>
                 <form id="medicationCatalogForm" onsubmit="app.submitMedicationCatalog(event)">
                     <input type="hidden" name="med_id" id="medFormId">
                     <input type="hidden" name="med_mode" id="medFormMode">
                     <label>
-                        Medication Name
+                        <span data-i18n="medication.name">Medication Name</span>
                         <input type="text" name="med_name" id="medFormName" required minlength="1" maxlength="200" placeholder="e.g. Ritalin">
                     </label>
                     <label>
-                        Dose
+                        <span data-i18n="medication.dose">Dose</span>
                         <input type="text" name="med_dose" id="medFormDose" required minlength="1" maxlength="100" placeholder="e.g. 10mg">
                     </label>
                     <label>
-                        Notes (optional)
+                        <span data-i18n="medication.notes_optional">Notes (optional)</span>
                         <textarea name="med_notes" id="medFormNotes" maxlength="500" placeholder="e.g. Take with food"></textarea>
                     </label>
                     <footer>
-                        <button type="submit">Save</button>
-                        <button type="button" class="secondary" onclick="app.closeMedicationModal()">Cancel</button>
+                        <button type="submit" data-i18n="save">Save</button>
+                        <button type="button" class="secondary" onclick="app.closeMedicationModal()" data-i18n="cancel">Cancel</button>
                     </footer>
                 </form>
             </article>
         </dialog>
     </div>
     
-    <script src="assets/app.js?v=0.170"></script>
+    <script src="/assets/app.js?v=0.200"></script>
 </body>
 </html>

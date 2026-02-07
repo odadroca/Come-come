@@ -1,7 +1,7 @@
 /**
  * Come-Come PWA Application
- * Version: 0.170
- * Sprint 17 - Token filter + Slider UI
+ * Version: 0.200
+ * Sprint 20 - i18n Meal/Food Remediation + Simplified Schema
  */
 
 const app = {
@@ -52,7 +52,7 @@ const app = {
                         // Valid session but no children configured
                         this.state.children = [];
                         this.state.selectedChild = null;
-                        this.showError('No children configured. Please add a child in Guardian Tools.');
+                        this.showError(this.t('error.no_children'));
                         await this.loadUserDataNoChild();
                         this.showScreen('mainScreen');
                         return;
@@ -92,7 +92,7 @@ const app = {
      * B10 fix: Separate path for child sessions
      */
     async loadUserDataForChild() {
-        document.getElementById('userGreeting').textContent = 'Child';
+        document.getElementById('userGreeting').textContent = this.t('login.child');
         document.getElementById('guardianSection').style.display = 'none';
         
         // Load locale after authentication is confirmed
@@ -119,7 +119,7 @@ const app = {
      * Load minimal user data when no children exist
      */
     async loadUserDataNoChild() {
-        document.getElementById('userGreeting').textContent = 'Guardian';
+        document.getElementById('userGreeting').textContent = this.t('login.guardian');
         document.getElementById('guardianSection').style.display = 'block';
         
         // Load locale after authentication is confirmed (B02/B13 fix)
@@ -177,7 +177,7 @@ const app = {
             // Use public endpoint that doesn't require auth
             const data = await this.api('/auth/users');
             const userSelect = document.getElementById('userId');
-            userSelect.innerHTML = '<option value="">Select...</option>';
+            userSelect.innerHTML = `<option value="">${this.t('form.select')}</option>`;
             
             if (role === 'child') {
                 if (data.children && data.children.length > 0) {
@@ -186,7 +186,7 @@ const app = {
                         userSelect.innerHTML += `<option value="${child.user_id}">${child.name}</option>`;
                     });
                 } else {
-                    userSelect.innerHTML += '<option value="" disabled>No children configured</option>';
+                    userSelect.innerHTML += `<option value="" disabled>${this.t('error.no_children_configured')}</option>`;
                 }
             } else {
                 if (data.guardians && data.guardians.length > 0) {
@@ -194,11 +194,11 @@ const app = {
                         userSelect.innerHTML += `<option value="${guardian.user_id}">${guardian.name}</option>`;
                     });
                 } else {
-                    userSelect.innerHTML += '<option value="" disabled>No guardians configured</option>';
+                    userSelect.innerHTML += `<option value="" disabled>${this.t('error.no_guardians_configured')}</option>`;
                 }
             }
         } catch (error) {
-            this.showError('Failed to load users: ' + (error.message || 'Unknown error'));
+            this.showError(this.t('error.load_users'));
         }
     },
     
@@ -237,7 +237,7 @@ const app = {
             this.showScreen('mainScreen');
             
         } catch (error) {
-            this.showError(error.message || 'Login failed');
+            this.showError(error.message || this.t('error.login_failed'));
         }
     },
     
@@ -323,13 +323,14 @@ const app = {
         try {
             this.state.foods = await this.api(`/catalog/foods?child_id=${this.state.selectedChild}`);
         } catch (error) {
-            this.showError('Failed to load food catalog');
+            this.showError(this.t('error.load_food_catalog'));
             this.state.foods = [];
         }
     },
     
     /**
      * Render meal cards
+     * Sprint 20: Use translation_key for localized meal names
      */
     renderMealCards() {
         const container = document.getElementById('mealCards');
@@ -339,9 +340,11 @@ const app = {
             const card = document.createElement('button');
             card.className = 'meal-card';
             card.onclick = () => this.openMealModal(template);
+            // Sprint 20: Use translation_key if available, fallback to name
+            const displayName = template.translation_key ? this.t(template.translation_key) : template.name;
             card.innerHTML = `
                 <span class="meal-icon">${template.icon}</span>
-                <span class="meal-name">${template.name}</span>
+                <span class="meal-name">${displayName}</span>
             `;
             container.appendChild(card);
         });
@@ -349,23 +352,26 @@ const app = {
     
     /**
      * Open meal modal
+     * Sprint 20: Use translation_key for localized modal title
      */
     openMealModal(template) {
         // Guard: need a selected child to log meals
         if (!this.state.selectedChild) {
-            this.showError('No child selected. Please add a child first.');
+            this.showError(this.t('error.no_child_selected'));
             return;
         }
         
         // Guard: need foods to log meals
         if (!this.state.foods || this.state.foods.length === 0) {
-            this.showError('No foods available. Please add foods to the catalog first.');
+            this.showError(this.t('error.no_foods_available'));
             return;
         }
         
         this.state.currentMeal = { template };
         
-        document.getElementById('mealModalTitle').textContent = template.name;
+        // Sprint 20: Use translation_key for modal title
+        const displayName = template.translation_key ? this.t(template.translation_key) : template.name;
+        document.getElementById('mealModalTitle').textContent = displayName;
         
         // Render food quantity inputs with slider UI (Sprint 17)
         const container = document.getElementById('foodQuantityInputs');
@@ -374,8 +380,10 @@ const app = {
         this.state.foods.forEach(food => {
             const div = document.createElement('div');
             div.className = 'food-quantity-input';
+            // Sprint 20: Translate food category
+            const categoryLabel = this.t('food.category.' + food.category);
             div.innerHTML = `
-                <label>${this.escapeHtml(food.name)} <small>(${food.category})</small></label>
+                <label>${this.escapeHtml(food.name)} <small>(${categoryLabel})</small></label>
                 <div class="quantity-slider-container" id="slider-container-${food.id}">
                     <input type="range" 
                            class="quantity-slider" 
@@ -527,7 +535,7 @@ const app = {
         });
         
         if (foods.length === 0) {
-            this.showError('Please add at least one food item');
+            this.showError(this.t('error.no_food_selected'));
             return;
         }
         
@@ -542,10 +550,10 @@ const app = {
             
             this.closeMealModal();
             await this.loadMealsForDate();
-            this.showSuccess('Meal logged successfully');
+            this.showSuccess(this.t('success.meal_logged'));
             
         } catch (error) {
-            this.showError(error.message || 'Failed to log meal');
+            this.showError(error.message || this.t('error.log_meal'));
         }
     },
     
@@ -555,7 +563,7 @@ const app = {
     async loadMealsForDate() {
         // Guard: need a selected child to load meals
         if (!this.state.selectedChild) {
-            document.getElementById('todaysLogsContent').innerHTML = '<p>No child selected.</p>';
+            document.getElementById('todaysLogsContent').innerHTML = `<p>${this.t('error.no_child_selected')}</p>`;
             return;
         }
         
@@ -566,7 +574,7 @@ const app = {
         const today = new Date().toISOString().split('T')[0];
         const label = document.getElementById('todaysLogsLabel');
         if (label) {
-            label.textContent = date === today ? 'Logs for Today' : `Logs for ${date}`;
+            label.textContent = date === today ? this.t('logs.today') : `${this.t('logs.for_date')} ${date}`;
         }
         
         // Set weight form date default
@@ -580,7 +588,7 @@ const app = {
             const meals = await this.api(`/meals/${this.state.selectedChild}/${date}`);
             this.renderMeals(meals);
         } catch (error) {
-            document.getElementById('todaysLogsContent').innerHTML = '<p>No meals logged for this date.</p>';
+            document.getElementById('todaysLogsContent').innerHTML = `<p>${this.t('logs.no_meals')}</p>`;
         }
         
         // Load medication logs for the date
@@ -595,7 +603,7 @@ const app = {
                 const meds = await this.api(`/medications/${this.state.selectedChild}/${date}`);
                 this.renderDailyMeds(meds);
             } catch (error) {
-                medicationContent.innerHTML = '<p>No medication logs.</p>';
+                medicationContent.innerHTML = `<p>${this.t('logs.no_medications')}</p>`;
             }
         } else if (this.state.role === 'child' && this.state.childSeesMedications) {
             // Child with permission to see medications
@@ -604,7 +612,7 @@ const app = {
                 const meds = await this.api(`/medications/${this.state.selectedChild}/${date}`);
                 this.renderDailyMeds(meds);
             } catch (error) {
-                medicationContent.innerHTML = '<p>No medication logs.</p>';
+                medicationContent.innerHTML = `<p>${this.t('logs.no_medications')}</p>`;
             }
         } else {
             // Child without permission: hide entire medication section
@@ -617,7 +625,7 @@ const app = {
             const weight = await this.api(`/weights/${this.state.selectedChild}/${date}`);
             this.renderDailyWeight(weight);
         } catch (error) {
-            document.getElementById('todaysWeightContent').innerHTML = '<p>No weight logged.</p>';
+            document.getElementById('todaysWeightContent').innerHTML = `<p>${this.t('logs.no_weight')}</p>`;
         }
         
         // Load history (last 7 days)
@@ -631,15 +639,18 @@ const app = {
         const container = document.getElementById('todaysLogsContent');
         
         if (meals.length === 0) {
-            container.innerHTML = '<p>No meals logged for this date.</p>';
+            container.innerHTML = `<p>${this.t('logs.no_meals')}</p>`;
             return;
         }
         
         const isGuardian = this.state.role === 'guardian';
         
-        container.innerHTML = meals.map(meal => `
+        container.innerHTML = meals.map(meal => {
+            // Sprint 20: Use translation_key for meal name if available
+            const mealName = meal.meal_translation_key ? this.t(meal.meal_translation_key) : (meal.meal_name || this.t('meal.default'));
+            return `
             <article>
-                <h4>${this.escapeHtml(meal.meal_icon || '')} ${this.escapeHtml(meal.meal_name || 'Meal')}</h4>
+                <h4>${this.escapeHtml(meal.meal_icon || '')} ${mealName}</h4>
                 <ul>
                     ${meal.foods.map(food => `
                         <li>${this.escapeHtml(food.food_name)}: ${food.quantity_decimal}</li>
@@ -647,12 +658,12 @@ const app = {
                 </ul>
                 ${meal.note ? `<p><em>${this.escapeHtml(meal.note)}</em></p>` : ''}
                 <div>
-                    ${meal.is_reviewed ? '<span style="color:green">✓ Reviewed</span>' : 
-                        (isGuardian ? `<button class="outline" onclick="app.reviewMeal(${meal.id})">✓ Review</button>` : '<span style="color:gray">Pending review</span>')}
-                    ${isGuardian ? `<button class="outline secondary" onclick="app.voidMeal(${meal.id})">✗ Void</button>` : ''}
+                    ${meal.is_reviewed ? `<span style="color:green">✓ ${this.t('meal.reviewed')}</span>` : 
+                        (isGuardian ? `<button class="outline" onclick="app.reviewMeal(${meal.id})">✓ ${this.t('meal.review')}</button>` : `<span style="color:gray">${this.t('meal.pending')}</span>`)}
+                    ${isGuardian ? `<button class="outline secondary" onclick="app.voidMeal(${meal.id})">✗ ${this.t('meal.void')}</button>` : ''}
                 </div>
-            </article>
-        `).join('');
+            </article>`;
+        }).join('');
     },
     
     /**
@@ -661,14 +672,14 @@ const app = {
     renderDailyMeds(meds) {
         const container = document.getElementById('todaysMedsContent');
         if (!meds || meds.length === 0) {
-            container.innerHTML = '<p>No medication logs.</p>';
+            container.innerHTML = `<p>${this.t('logs.no_medications')}</p>`;
             return;
         }
         container.innerHTML = meds.map(m => `
             <article>
                 <strong>${this.escapeHtml(m.name)}</strong> (${this.escapeHtml(m.dose)})
-                — <span>${m.status === 'taken' ? '✅ Taken' : m.status === 'missed' ? '❌ Missed' : '⏭️ Skipped'}</span>
-                ${m.log_time ? ` at ${m.log_time}` : ''}
+                — <span>${m.status === 'taken' ? `✅ ${this.t('medication.status.taken')}` : m.status === 'missed' ? `❌ ${this.t('medication.status.missed')}` : `⏭️ ${this.t('medication.status.skipped')}`}</span>
+                ${m.log_time ? ` ${this.t('at')} ${m.log_time}` : ''}
                 ${m.notes ? `<br><em>${this.escapeHtml(m.notes)}</em>` : ''}
             </article>
         `).join('');
@@ -680,7 +691,7 @@ const app = {
     renderDailyWeight(weight) {
         const container = document.getElementById('todaysWeightContent');
         if (!weight) {
-            container.innerHTML = '<p>No weight logged.</p>';
+            container.innerHTML = `<p>${this.t('logs.no_weight')}</p>`;
             return;
         }
         container.innerHTML = `<p><strong>${weight.weight_kg} ${weight.uom || 'kg'}</strong></p>`;
@@ -692,10 +703,10 @@ const app = {
     async reviewMeal(mealId) {
         try {
             await this.api(`/meals/${mealId}/review`, 'POST');
-            this.showSuccess('Meal reviewed');
+            this.showSuccess(this.t('success.meal_reviewed'));
             await this.loadMealsForDate();
         } catch (error) {
-            this.showError(error.message || 'Failed to review meal');
+            this.showError(error.message || this.t('error.review_meal'));
         }
     },
     
@@ -703,13 +714,13 @@ const app = {
      * Void meal (guardian only)
      */
     async voidMeal(mealId) {
-        if (!confirm('Void this meal log? It will be hidden from daily view.')) return;
+        if (!confirm(this.t('confirm.void_meal'))) return;
         try {
             await this.api(`/meals/${mealId}/void`, 'POST');
-            this.showSuccess('Meal voided');
+            this.showSuccess(this.t('success.meal_voided'));
             await this.loadMealsForDate();
         } catch (error) {
-            this.showError(error.message || 'Failed to void meal');
+            this.showError(error.message || this.t('error.void_meal'));
         }
     },
     
@@ -729,7 +740,7 @@ const app = {
             const history = await this.api(`/history/${this.state.selectedChild}/${startDate}/${endDate}`);
             this.renderHistory(history);
         } catch (error) {
-            container.innerHTML = '<p>Failed to load history.</p>';
+            container.innerHTML = `<p>${this.t('error.load_history')}</p>`;
         }
     },
     
@@ -740,7 +751,7 @@ const app = {
         const container = document.getElementById('historyContent');
         
         if (!history.meals.length && !history.medications.length && !history.weights.length) {
-            container.innerHTML = '<p>No history for the last 7 days.</p>';
+            container.innerHTML = `<p>${this.t('logs.no_history')}</p>`;
             return;
         }
         
@@ -771,22 +782,29 @@ const app = {
         container.innerHTML = sortedDates.map(date => {
             const day = byDate[date];
             let html = `<details><summary><strong>${date}</strong>`;
-            html += ` — ${day.meals.length} meal(s), ${day.meds.length} med(s)`;
+            html += ` — ${day.meals.length} ${this.t('history.meals')}, ${day.meds.length} ${this.t('history.meds')}`;
             if (day.weight) html += `, ${day.weight.weight_kg}kg`;
             html += `</summary>`;
             
             if (day.meals.length) {
-                html += day.meals.map(m => `
-                    <p>${this.escapeHtml(m.meal_icon || '')} <strong>${this.escapeHtml(m.meal_name || 'Meal')}</strong>: 
+                html += day.meals.map(m => {
+                    // Sprint 20: Use translation_key for meal name
+                    const mealName = m.meal_translation_key ? this.t(m.meal_translation_key) : (m.meal_name || this.t('meal.default'));
+                    return `
+                    <p>${this.escapeHtml(m.meal_icon || '')} <strong>${mealName}</strong>: 
                     ${m.foods.map(f => this.escapeHtml(f.food_name) + ' (' + f.quantity_decimal + ')').join(', ')}
                     ${m.is_reviewed ? ' ✓' : ''}
-                    </p>`).join('');
+                    </p>`;
+                }).join('');
             }
             
             if (day.meds.length) {
-                html += day.meds.map(m => `
-                    <p>💊 ${this.escapeHtml(m.medication_name)} ${this.escapeHtml(m.medication_dose)} — ${m.status}${m.log_time ? ' at ' + m.log_time : ''}</p>
-                `).join('');
+                html += day.meds.map(m => {
+                    // Sprint 20: Translate medication status
+                    const statusLabel = this.t('medication.status.' + m.status);
+                    return `
+                    <p>💊 ${this.escapeHtml(m.medication_name)} ${this.escapeHtml(m.medication_dose)} — ${statusLabel}${m.log_time ? ' ' + this.t('at') + ' ' + m.log_time : ''}</p>
+                `;}).join('');
             }
             
             if (day.weight) {
@@ -818,11 +836,11 @@ const app = {
             event.target.reset();
             // Re-set the date field default
             document.getElementById('weightDate').value = this.state.selectedDate;
-            this.showSuccess('Weight logged successfully');
+            this.showSuccess(this.t('success.weight_logged'));
             await this.loadMealsForDate(); // Refresh daily view including weight
             
         } catch (error) {
-            this.showError(error.message || 'Failed to log weight');
+            this.showError(error.message || this.t('error.log_weight'));
         }
     },
     
@@ -839,7 +857,7 @@ const app = {
             const medications = await this.api(`/medications/available/${this.state.selectedChild}`);
             const select = document.querySelector('#medicationForm select[name="medication_id"]');
             
-            select.innerHTML = '<option value="">Select medication...</option>';
+            select.innerHTML = `<option value="">${this.t('form.select_medication')}</option>`;
             medications.forEach(med => {
                 select.innerHTML += `<option value="${med.id}">${med.name} (${med.dose})</option>`;
             });
@@ -848,7 +866,7 @@ const app = {
             document.querySelector('#medicationForm input[name="log_date"]').value = this.state.selectedDate;
             
         } catch (error) {
-            this.showError('Failed to load medications');
+            this.showError(this.t('error.load_medications'));
         }
     },
     
@@ -871,10 +889,10 @@ const app = {
             });
             
             event.target.reset();
-            this.showSuccess('Medication logged successfully');
+            this.showSuccess(this.t('success.medication_logged'));
             
         } catch (error) {
-            this.showError(error.message || 'Failed to log medication');
+            this.showError(error.message || this.t('error.log_medication'));
         }
     },
     
@@ -884,12 +902,12 @@ const app = {
     async showCreateTokenForm() {
         // Guard: need a selected child to create token
         if (!this.state.selectedChild) {
-            this.showError('No child selected. Please add a child first.');
+            this.showError(this.t('error.no_child_selected'));
             return;
         }
         
         const expiresIn = prompt(
-            'Token expiry:\n1 = 30 minutes\n2 = 2 hours\n3 = 12 hours\n4 = 1 day',
+            this.t('token.expiry_prompt'),
             '2'
         );
         
@@ -904,7 +922,7 @@ const app = {
         
         const seconds = durations[expiresIn];
         if (!seconds) {
-            this.showError('Invalid selection');
+            this.showError(this.t('error.invalid_selection'));
             return;
         }
         
@@ -914,13 +932,13 @@ const app = {
                 expires_in: seconds
             });
             
-            this.showSuccess('Token created!');
+            this.showSuccess(this.t('success.token_created'));
             // Show URL in a prompt so user can copy it
-            prompt('Guest access URL (copy this):', result.url);
+            prompt(this.t('token.copy_url'), result.url);
             await this.loadTokens();
             
         } catch (error) {
-            this.showError(error.message || 'Failed to create token');
+            this.showError(error.message || this.t('error.create_token'));
         }
     },
     
@@ -933,7 +951,7 @@ const app = {
             const container = document.getElementById('tokenList');
             
             if (allTokens.length === 0) {
-                container.innerHTML = '<p>No active tokens.</p>';
+                container.innerHTML = `<p>${this.t('token.none')}</p>`;
                 return;
             }
             
@@ -952,19 +970,19 @@ const app = {
                 // Determine status label
                 let statusLabel = '';
                 if (isRevoked) {
-                    statusLabel = '<span style="color:gray">Revoked</span>';
+                    statusLabel = `<span style="color:gray">${this.t('token.revoked')}</span>`;
                 } else if (isExpired) {
-                    statusLabel = '<span style="color:gray">Expired</span>';
+                    statusLabel = `<span style="color:gray">${this.t('token.expired')}</span>`;
                 }
                 
                 return `
                 <article${isInactive ? ' style="opacity:0.6"' : ''}>
                     <p><strong>${this.escapeHtml(token.child_name)}</strong></p>
-                    <p><small>Expires: ${token.expires_at}</small></p>
+                    <p><small>${this.t('token.expires')}: ${token.expires_at}</small></p>
                     ${isInactive ? 
                         statusLabel : 
                         `<p><input type="text" value="${guestUrl}" readonly onclick="this.select()" style="font-size:0.75em"></p>
-                         <button class="secondary" onclick="app.revokeToken('${token.token}')">Revoke</button>`
+                         <button class="secondary" onclick="app.revokeToken('${token.token}')">${this.t('token.revoke')}</button>`
                     }
                 </article>`;
             }).join('');
@@ -972,16 +990,16 @@ const app = {
             // Add show more/less toggle if there are more than default limit
             if (hasMore) {
                 if (showAll) {
-                    html += `<p><a href="#" onclick="app.toggleTokenFilter(false); return false;">Show fewer (${defaultLimit})</a></p>`;
+                    html += `<p><a href="#" onclick="app.toggleTokenFilter(false); return false;">${this.t('token.show_fewer')} (${defaultLimit})</a></p>`;
                 } else {
-                    html += `<p><a href="#" onclick="app.toggleTokenFilter(true); return false;">Show all (${allTokens.length})</a></p>`;
+                    html += `<p><a href="#" onclick="app.toggleTokenFilter(true); return false;">${this.t('token.show_all')} (${allTokens.length})</a></p>`;
                 }
             }
             
             container.innerHTML = html;
             
         } catch (error) {
-            this.showError('Failed to load tokens');
+            this.showError(this.t('error.load_tokens'));
         }
     },
     
@@ -998,17 +1016,17 @@ const app = {
      * Revoke guest token
      */
     async revokeToken(token) {
-        if (!confirm('Revoke this token? Clinician will lose access immediately.')) {
+        if (!confirm(this.t('confirm.revoke_token'))) {
             return;
         }
         
         try {
             await this.api(`/guest/token/${token}`, 'DELETE');
-            this.showSuccess('Token revoked');
+            this.showSuccess(this.t('success.token_revoked'));
             await this.loadTokens();
             
         } catch (error) {
-            this.showError(error.message || 'Failed to revoke token');
+            this.showError(error.message || this.t('error.revoke_token'));
         }
     },
     
@@ -1018,7 +1036,7 @@ const app = {
     async exportPDF() {
         // Guard: need a selected child to export report
         if (!this.state.selectedChild) {
-            this.showError('No child selected. Please add a child first.');
+            this.showError(this.t('error.no_child_selected'));
             return;
         }
         
@@ -1028,7 +1046,7 @@ const app = {
         // Open in new tab to trigger download
         window.open(url, '_blank');
         
-        this.showSuccess('Generating report...');
+        this.showSuccess(this.t('success.generating_report'));
     },
     
     /**
@@ -1037,11 +1055,11 @@ const app = {
     async createBackup() {
         try {
             const result = await this.api('/backup/create', 'POST');
-            this.showSuccess(`Backup created: ${result.filename}`);
+            this.showSuccess(`${this.t('success.backup_created')}: ${result.filename}`);
             await this.loadBackups();
             await this.loadDatabaseStats();
         } catch (error) {
-            this.showError(error.message || 'Failed to create backup');
+            this.showError(error.message || this.t('error.create_backup'));
         }
     },
     
@@ -1073,11 +1091,11 @@ const app = {
         
         try {
             await this.api('/settings/child-sees-medications', 'POST', { value: newValue });
-            this.showSuccess(`Children ${newValue ? 'can now' : 'can no longer'} see medication logs`);
+            this.showSuccess(newValue ? this.t('success.child_can_see_meds') : this.t('success.child_cannot_see_meds'));
         } catch (error) {
             // Revert toggle on error
             toggle.checked = !newValue;
-            this.showError(error.message || 'Failed to update setting');
+            this.showError(error.message || this.t('error.update_setting'));
         }
     },
     
@@ -1090,21 +1108,21 @@ const app = {
             const container = document.getElementById('backupList');
             
             if (backups.length === 0) {
-                container.innerHTML = '<p>No backups available.</p>';
+                container.innerHTML = `<p>${this.t('backup.none')}</p>`;
                 return;
             }
             
             container.innerHTML = backups.map(backup => `
                 <article>
                     <p><strong>${backup.filename}</strong></p>
-                    <p><small>Created: ${backup.created_at}</small></p>
-                    <p><small>Size: ${(backup.size_bytes / 1024).toFixed(1)} KB</small></p>
-                    <button onclick="app.downloadBackup('${backup.filename}')">Download</button>
-                    <button class="secondary" onclick="app.restoreBackup('${backup.filename}')">Restore</button>
+                    <p><small>${this.t('backup.created')}: ${backup.created_at}</small></p>
+                    <p><small>${this.t('backup.size')}: ${(backup.size_bytes / 1024).toFixed(1)} KB</small></p>
+                    <button onclick="app.downloadBackup('${backup.filename}')">${this.t('backup.download')}</button>
+                    <button class="secondary" onclick="app.restoreBackup('${backup.filename}')">${this.t('backup.restore')}</button>
                 </article>
             `).join('');
         } catch (error) {
-            this.showError('Failed to load backups');
+            this.showError(this.t('error.load_backups'));
         }
     },
     
@@ -1119,18 +1137,18 @@ const app = {
      * Restore backup
      */
     async restoreBackup(filename) {
-        if (!confirm(`Restore backup "${filename}"? Current data will be backed up first. This action cannot be undone.`)) {
+        if (!confirm(this.t('confirm.restore_backup').replace('{filename}', filename))) {
             return;
         }
         
         try {
             await this.api('/backup/restore', 'POST', { filename });
-            this.showSuccess('Backup restored successfully. Please refresh the page.');
+            this.showSuccess(this.t('success.backup_restored'));
             
             // Reload page after 2 seconds
             setTimeout(() => location.reload(), 2000);
         } catch (error) {
-            this.showError(error.message || 'Failed to restore backup');
+            this.showError(error.message || this.t('error.restore_backup'));
         }
     },
     
@@ -1144,17 +1162,17 @@ const app = {
             
             container.innerHTML = `
                 <table>
-                    <tr><td>Database size:</td><td><strong>${stats.size_mb} MB</strong></td></tr>
-                    <tr><td>Schema version:</td><td>${stats.schema_version}</td></tr>
-                    <tr><td>Children:</td><td>${stats.tables.children}</td></tr>
-                    <tr><td>Meal logs:</td><td>${stats.tables.meal_logs}</td></tr>
-                    <tr><td>Weight logs:</td><td>${stats.tables.weight_logs}</td></tr>
-                    <tr><td>Medication logs:</td><td>${stats.tables.medication_logs}</td></tr>
-                    <tr><td>Last backup:</td><td>${stats.last_backup || 'Never'}</td></tr>
+                    <tr><td>${this.t('stats.database_size')}:</td><td><strong>${stats.size_mb} MB</strong></td></tr>
+                    <tr><td>${this.t('stats.schema_version')}:</td><td>${stats.schema_version}</td></tr>
+                    <tr><td>${this.t('stats.children')}:</td><td>${stats.tables.children}</td></tr>
+                    <tr><td>${this.t('stats.meal_logs')}:</td><td>${stats.tables.meal_logs}</td></tr>
+                    <tr><td>${this.t('stats.weight_logs')}:</td><td>${stats.tables.weight_logs}</td></tr>
+                    <tr><td>${this.t('stats.medication_logs')}:</td><td>${stats.tables.medication_logs}</td></tr>
+                    <tr><td>${this.t('stats.last_backup')}:</td><td>${stats.last_backup || this.t('stats.never')}</td></tr>
                 </table>
             `;
         } catch (error) {
-            this.showError('Failed to load database stats');
+            this.showError(this.t('error.load_stats'));
         }
     },
     
@@ -1162,22 +1180,23 @@ const app = {
      * Vacuum database
      */
     async vacuumDatabase() {
-        if (!confirm('Optimize database? This may take a few seconds.')) {
+        if (!confirm(this.t('confirm.vacuum'))) {
             return;
         }
         
         try {
             await this.api('/backup/vacuum', 'POST');
-            this.showSuccess('Database optimized successfully');
+            this.showSuccess(this.t('success.database_optimized'));
             await this.loadDatabaseStats();
         } catch (error) {
-            this.showError(error.message || 'Failed to optimize database');
+            this.showError(error.message || this.t('error.optimize_database'));
         }
     },
     
     /**
      * Load locale and translations from server
      * B12 fix: Dynamically populate locale dropdowns from /i18n/locales response
+     * Sprint 18: Call applyTranslations() after loading
      */
     async loadLocale() {
         try {
@@ -1224,11 +1243,42 @@ const app = {
             // Update locale switcher to show current locale
             if (switcher) switcher.value = userLocale;
             if (adminSelect) adminSelect.value = userLocale;
+            
+            // Sprint 18: Apply translations to DOM
+            this.applyTranslations();
         } catch (e) {
             // Fallback: no translations
             this.state.translations = {};
             this.state.currentLocale = 'en-UK';
         }
+    },
+    
+    /**
+     * Apply translations to all DOM elements with data-i18n attribute
+     * Sprint 18: i18n UI rendering
+     */
+    applyTranslations() {
+        const elements = document.querySelectorAll('[data-i18n]');
+        elements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const translation = this.t(key);
+            
+            // Only update if we have a translation (not just the key)
+            if (translation !== key) {
+                // For input elements, update placeholder if it exists
+                if (el.tagName === 'INPUT' && el.placeholder) {
+                    el.placeholder = translation;
+                }
+                // For option elements, update textContent
+                else if (el.tagName === 'OPTION') {
+                    el.textContent = translation;
+                }
+                // For all other elements, update textContent
+                else {
+                    el.textContent = translation;
+                }
+            }
+        });
     },
     
     /**
@@ -1240,6 +1290,7 @@ const app = {
     
     /**
      * Switch locale via nav dropdown
+     * Sprint 18: Call applyTranslations() after switching
      */
     async switchLocale() {
         const switcher = document.getElementById('localeSwitcher');
@@ -1252,6 +1303,9 @@ const app = {
             // Reload translations
             const translations = await this.api(`/i18n/translations/${newLocale}`);
             this.state.translations = translations;
+            
+            // Sprint 18: Apply new translations to DOM
+            this.applyTranslations();
             
             this.showSuccess(`Locale set to ${newLocale}`);
         } catch (error) {
@@ -1271,7 +1325,7 @@ const app = {
             const data = await this.api('/users');
             this.renderUserList(data);
         } catch (error) {
-            document.getElementById('userManagement').innerHTML = '<p>Failed to load users.</p>';
+            document.getElementById('userManagement').innerHTML = `<p>${this.t('error.load_users')}</p>`;
         }
     },
     
@@ -1286,16 +1340,16 @@ const app = {
             return `
                 <tr>
                     <td>${this.escapeHtml(g.name)}</td>
-                    <td>Guardian</td>
-                    <td>${isLocked ? '🔒 Locked' : '✅ Active'}</td>
+                    <td>${this.t('login.guardian')}</td>
+                    <td>${isLocked ? `🔒 ${this.t('user.locked')}` : `✅ ${this.t('user.active')}`}</td>
                     <td>
-                        <button class="outline secondary" onclick="app.showEditUserForm(${g.user_id}, 'guardian', '${this.escapeHtml(g.name)}', '${g.locale || 'en-UK'}')">Edit</button>
+                        <button class="outline secondary" onclick="app.showEditUserForm(${g.user_id}, 'guardian', '${this.escapeHtml(g.name)}', '${g.locale || 'en-UK'}')">${this.t('user.edit')}</button>
                         <button class="outline secondary" onclick="app.showResetPinForm(${g.user_id}, '${this.escapeHtml(g.name)}')">PIN</button>
                         ${isLocked ? 
-                            `<button class="outline" onclick="app.unblockUser(${g.user_id})">Unblock</button>` :
-                            `<button class="outline secondary" onclick="app.blockUser(${g.user_id}, '${this.escapeHtml(g.name)}')">Block</button>`
+                            `<button class="outline" onclick="app.unblockUser(${g.user_id})">${this.t('user.unblock')}</button>` :
+                            `<button class="outline secondary" onclick="app.blockUser(${g.user_id}, '${this.escapeHtml(g.name)}')">${this.t('user.block')}</button>`
                         }
-                        <button class="outline secondary" onclick="app.deleteUser(${g.user_id}, '${this.escapeHtml(g.name)}')">Delete</button>
+                        <button class="outline secondary" onclick="app.deleteUser(${g.user_id}, '${this.escapeHtml(g.name)}')">${this.t('user.delete')}</button>
                     </td>
                 </tr>`;
         }).join('');
@@ -1305,16 +1359,16 @@ const app = {
             return `
                 <tr>
                     <td>${this.escapeHtml(c.name)}</td>
-                    <td>Child</td>
-                    <td>${isActive ? '✅ Active' : '🚫 Blocked'}</td>
+                    <td>${this.t('login.child')}</td>
+                    <td>${isActive ? `✅ ${this.t('user.active')}` : `🚫 ${this.t('user.blocked')}`}</td>
                     <td>
-                        <button class="outline secondary" onclick="app.showEditUserForm(${c.user_id}, 'child', '${this.escapeHtml(c.name)}', '${c.locale || 'en-UK'}')">Edit</button>
+                        <button class="outline secondary" onclick="app.showEditUserForm(${c.user_id}, 'child', '${this.escapeHtml(c.name)}', '${c.locale || 'en-UK'}')">${this.t('user.edit')}</button>
                         <button class="outline secondary" onclick="app.showResetPinForm(${c.user_id}, '${this.escapeHtml(c.name)}')">PIN</button>
                         ${isActive ? 
-                            `<button class="outline secondary" onclick="app.blockUser(${c.user_id}, '${this.escapeHtml(c.name)}')">Block</button>` :
-                            `<button class="outline" onclick="app.unblockUser(${c.user_id})">Unblock</button>`
+                            `<button class="outline secondary" onclick="app.blockUser(${c.user_id}, '${this.escapeHtml(c.name)}')">${this.t('user.block')}</button>` :
+                            `<button class="outline" onclick="app.unblockUser(${c.user_id})">${this.t('user.unblock')}</button>`
                         }
-                        <button class="outline secondary" onclick="app.deleteUser(${c.user_id}, '${this.escapeHtml(c.name)}')">Delete</button>
+                        <button class="outline secondary" onclick="app.deleteUser(${c.user_id}, '${this.escapeHtml(c.name)}')">${this.t('user.delete')}</button>
                     </td>
                 </tr>`;
         }).join('');
@@ -1322,7 +1376,7 @@ const app = {
         container.innerHTML = `
             <table>
                 <thead>
-                    <tr><th>Name</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+                    <tr><th>${this.t('user.name')}</th><th>${this.t('user.role')}</th><th>${this.t('user.status')}</th><th>${this.t('user.actions')}</th></tr>
                 </thead>
                 <tbody>
                     ${guardianRows}
@@ -1335,7 +1389,7 @@ const app = {
      * Show add child form
      */
     showAddChildForm() {
-        document.getElementById('userModalTitle').textContent = 'Add Child';
+        document.getElementById('userModalTitle').textContent = this.t('user.add_child');
         document.getElementById('userFormRole').value = 'child';
         document.getElementById('userFormUserId').value = '';
         document.getElementById('userFormMode').value = 'create';
@@ -1353,7 +1407,7 @@ const app = {
      * Show add guardian form
      */
     showAddGuardianForm() {
-        document.getElementById('userModalTitle').textContent = 'Add Guardian';
+        document.getElementById('userModalTitle').textContent = this.t('user.add_guardian');
         document.getElementById('userFormRole').value = 'guardian';
         document.getElementById('userFormUserId').value = '';
         document.getElementById('userFormMode').value = 'create';
@@ -1371,7 +1425,7 @@ const app = {
      * Show edit user form
      */
     showEditUserForm(userId, role, name, locale) {
-        document.getElementById('userModalTitle').textContent = 'Edit User';
+        document.getElementById('userModalTitle').textContent = this.t('user.edit_user');
         document.getElementById('userFormRole').value = role;
         document.getElementById('userFormUserId').value = userId;
         document.getElementById('userFormMode').value = 'edit';
@@ -1407,7 +1461,7 @@ const app = {
             const pinConfirm = formData.get('pin_confirm');
             
             if (pin !== pinConfirm) {
-                this.showError('PINs do not match');
+                this.showError(this.t('error.pin_mismatch'));
                 return;
             }
             
@@ -1445,10 +1499,10 @@ const app = {
                     locale: formData.get('locale')
                 });
                 this.closeUserModal();
-                this.showSuccess('User updated');
+                this.showSuccess(this.t('success.user_updated'));
                 await this.loadUsers();
             } catch (error) {
-                this.showError(error.message || 'Failed to update user');
+                this.showError(error.message || this.t('error.update_user'));
             }
         }
     },
@@ -1482,7 +1536,7 @@ const app = {
         const confirm = formData.get('new_pin_confirm');
         
         if (newPin !== confirm) {
-            this.showError('PINs do not match');
+            this.showError(this.t('error.pin_mismatch'));
             return;
         }
         
@@ -1491,9 +1545,9 @@ const app = {
                 new_pin: newPin
             });
             this.closePinModal();
-            this.showSuccess('PIN reset successfully');
+            this.showSuccess(this.t('success.pin_reset'));
         } catch (error) {
-            this.showError(error.message || 'Failed to reset PIN');
+            this.showError(error.message || this.t('error.reset_pin'));
         }
     },
     
@@ -1505,10 +1559,10 @@ const app = {
         
         try {
             await this.api(`/users/${userId}/block`, 'POST');
-            this.showSuccess('User blocked');
+            this.showSuccess(this.t('success.user_blocked'));
             await this.loadUsers();
         } catch (error) {
-            this.showError(error.message || 'Failed to block user');
+            this.showError(error.message || this.t('error.block_user'));
         }
     },
     
@@ -1518,10 +1572,10 @@ const app = {
     async unblockUser(userId) {
         try {
             await this.api(`/users/${userId}/unblock`, 'POST');
-            this.showSuccess('User unblocked');
+            this.showSuccess(this.t('success.user_unblocked'));
             await this.loadUsers();
         } catch (error) {
-            this.showError(error.message || 'Failed to unblock user');
+            this.showError(error.message || this.t('error.unblock_user'));
         }
     },
     
@@ -1533,10 +1587,10 @@ const app = {
         
         try {
             await this.api(`/users/${userId}`, 'DELETE');
-            this.showSuccess('User deleted');
+            this.showSuccess(this.t('success.user_deleted'));
             await this.loadUsers();
         } catch (error) {
-            this.showError(error.message || 'Failed to delete user');
+            this.showError(error.message || this.t('error.delete_user'));
         }
     },
     
@@ -1552,7 +1606,7 @@ const app = {
             const foods = await this.api('/catalog/foods/all');
             this.renderFoodCatalog(foods);
         } catch (error) {
-            document.getElementById('foodCatalog').innerHTML = '<p>Failed to load food catalog.</p>';
+            document.getElementById('foodCatalog').innerHTML = `<p>${this.t('error.load_food_catalog')}</p>`;
         }
     },
     
@@ -1563,7 +1617,7 @@ const app = {
         const container = document.getElementById('foodCatalog');
         
         if (!foods || foods.length === 0) {
-            container.innerHTML = '<p>No foods in catalog.</p>';
+            container.innerHTML = `<p>${this.t('catalog.no_foods')}</p>`;
             return;
         }
         
@@ -1572,15 +1626,15 @@ const app = {
             return `
                 <tr${isBlocked ? ' style="opacity:0.5"' : ''}>
                     <td>${this.escapeHtml(f.name)}</td>
-                    <td>${f.category}</td>
-                    <td>${isBlocked ? '🚫 Blocked' : '✅ Active'}</td>
+                    <td>${this.t('food.category.' + f.category)}</td>
+                    <td>${isBlocked ? `🚫 ${this.t('user.blocked')}` : `✅ ${this.t('user.active')}`}</td>
                     <td>
-                        <button class="outline secondary" onclick="app.showEditFoodForm(${f.id}, '${this.escapeHtml(f.name)}', '${f.category}')">Edit</button>
+                        <button class="outline secondary" onclick="app.showEditFoodForm(${f.id}, '${this.escapeHtml(f.name)}', '${f.category}')">${this.t('user.edit')}</button>
                         ${isBlocked ?
-                            `<button class="outline" onclick="app.unblockFood(${f.id})">Unblock</button>` :
-                            `<button class="outline secondary" onclick="app.blockFood(${f.id}, '${this.escapeHtml(f.name)}')">Block</button>`
+                            `<button class="outline" onclick="app.unblockFood(${f.id})">${this.t('user.unblock')}</button>` :
+                            `<button class="outline secondary" onclick="app.blockFood(${f.id}, '${this.escapeHtml(f.name)}')">${this.t('user.block')}</button>`
                         }
-                        <button class="outline secondary" onclick="app.deleteFood(${f.id}, '${this.escapeHtml(f.name)}')">Delete</button>
+                        <button class="outline secondary" onclick="app.deleteFood(${f.id}, '${this.escapeHtml(f.name)}')">${this.t('user.delete')}</button>
                     </td>
                 </tr>`;
         }).join('');
@@ -1588,7 +1642,7 @@ const app = {
         container.innerHTML = `
             <table>
                 <thead>
-                    <tr><th>Name</th><th>Category</th><th>Status</th><th>Actions</th></tr>
+                    <tr><th>${this.t('user.name')}</th><th>${this.t('food.category')}</th><th>${this.t('user.status')}</th><th>${this.t('user.actions')}</th></tr>
                 </thead>
                 <tbody>${rows}</tbody>
             </table>`;
@@ -1598,7 +1652,7 @@ const app = {
      * Show add food form
      */
     showAddFoodForm() {
-        document.getElementById('foodModalTitle').textContent = 'Add Food';
+        document.getElementById('foodModalTitle').textContent = this.t('food.add');
         document.getElementById('foodFormId').value = '';
         document.getElementById('foodFormMode').value = 'create';
         document.getElementById('foodFormName').value = '';
@@ -1610,7 +1664,7 @@ const app = {
      * Show edit food form
      */
     showEditFoodForm(foodId, name, category) {
-        document.getElementById('foodModalTitle').textContent = 'Edit Food';
+        document.getElementById('foodModalTitle').textContent = this.t('food.edit');
         document.getElementById('foodFormId').value = foodId;
         document.getElementById('foodFormMode').value = 'edit';
         document.getElementById('foodFormName').value = name;
@@ -1641,16 +1695,16 @@ const app = {
         try {
             if (mode === 'create') {
                 await this.api('/catalog/foods', 'POST', payload);
-                this.showSuccess('Food added');
+                this.showSuccess(this.t('success.food_added'));
             } else {
                 await this.api(`/catalog/foods/${foodId}`, 'PATCH', payload);
-                this.showSuccess('Food updated');
+                this.showSuccess(this.t('success.food_updated'));
             }
             this.closeFoodModal();
             await this.loadFoodCatalog();
             await this.loadFoods(); // refresh active foods for meal logging
         } catch (error) {
-            this.showError(error.message || 'Failed to save food');
+            this.showError(error.message || this.t('error.save_food'));
         }
     },
     
@@ -1661,11 +1715,11 @@ const app = {
         if (!confirm(`Block food "${name}"? It will not appear in meal logging.`)) return;
         try {
             await this.api(`/catalog/foods/${foodId}/block`, 'POST');
-            this.showSuccess('Food blocked');
+            this.showSuccess(this.t('success.food_blocked'));
             await this.loadFoodCatalog();
             await this.loadFoods();
         } catch (error) {
-            this.showError(error.message || 'Failed to block food');
+            this.showError(error.message || this.t('error.block_food'));
         }
     },
     
@@ -1675,11 +1729,11 @@ const app = {
     async unblockFood(foodId) {
         try {
             await this.api(`/catalog/foods/${foodId}/unblock`, 'POST');
-            this.showSuccess('Food unblocked');
+            this.showSuccess(this.t('success.food_unblocked'));
             await this.loadFoodCatalog();
             await this.loadFoods();
         } catch (error) {
-            this.showError(error.message || 'Failed to unblock food');
+            this.showError(error.message || this.t('error.unblock_food'));
         }
     },
     
@@ -1690,11 +1744,11 @@ const app = {
         if (!confirm(`Delete food "${name}"? This cannot be undone if the food has no historical data.`)) return;
         try {
             await this.api(`/catalog/foods/${foodId}`, 'DELETE');
-            this.showSuccess('Food deleted');
+            this.showSuccess(this.t('success.food_deleted'));
             await this.loadFoodCatalog();
             await this.loadFoods();
         } catch (error) {
-            this.showError(error.message || 'Failed to delete food');
+            this.showError(error.message || this.t('error.delete_food'));
         }
     },
     
@@ -1710,7 +1764,7 @@ const app = {
             const medications = await this.api('/catalog/medications/all');
             this.renderMedicationCatalog(medications);
         } catch (error) {
-            document.getElementById('medicationCatalog').innerHTML = '<p>Failed to load medication catalog.</p>';
+            document.getElementById('medicationCatalog').innerHTML = `<p>${this.t('error.load_medication_catalog')}</p>`;
         }
     },
     
@@ -1721,7 +1775,7 @@ const app = {
         const container = document.getElementById('medicationCatalog');
         
         if (!medications || medications.length === 0) {
-            container.innerHTML = '<p>No medications in catalog. Add one to enable medication logging.</p>';
+            container.innerHTML = `<p>${this.t('catalog.no_medications')}</p>`;
             return;
         }
         
@@ -1757,7 +1811,7 @@ const app = {
      * Show add medication form
      */
     showAddMedicationForm() {
-        document.getElementById('medicationModalTitle').textContent = 'Add Medication';
+        document.getElementById('medicationModalTitle').textContent = this.t('medication.add');
         document.getElementById('medFormId').value = '';
         document.getElementById('medFormMode').value = 'create';
         document.getElementById('medFormName').value = '';
@@ -1770,7 +1824,7 @@ const app = {
      * Show edit medication form
      */
     showEditMedicationForm(medId, name, dose, notes) {
-        document.getElementById('medicationModalTitle').textContent = 'Edit Medication';
+        document.getElementById('medicationModalTitle').textContent = this.t('medication.edit');
         document.getElementById('medFormId').value = medId;
         document.getElementById('medFormMode').value = 'edit';
         document.getElementById('medFormName').value = name;
@@ -1803,16 +1857,16 @@ const app = {
         try {
             if (mode === 'create') {
                 await this.api('/catalog/medications', 'POST', payload);
-                this.showSuccess('Medication added');
+                this.showSuccess(this.t('success.medication_added'));
             } else {
                 await this.api(`/catalog/medications/${medId}`, 'PATCH', payload);
-                this.showSuccess('Medication updated');
+                this.showSuccess(this.t('success.medication_updated'));
             }
             this.closeMedicationModal();
             await this.loadMedicationCatalog();
             await this.loadMedications(); // refresh dropdown for medication logging
         } catch (error) {
-            this.showError(error.message || 'Failed to save medication');
+            this.showError(error.message || this.t('error.save_medication'));
         }
     },
     
@@ -1823,11 +1877,11 @@ const app = {
         if (!confirm(`Block medication "${name}"? It will not appear in medication logging.`)) return;
         try {
             await this.api(`/catalog/medications/${medId}/block`, 'POST');
-            this.showSuccess('Medication blocked');
+            this.showSuccess(this.t('success.medication_blocked'));
             await this.loadMedicationCatalog();
             await this.loadMedications();
         } catch (error) {
-            this.showError(error.message || 'Failed to block medication');
+            this.showError(error.message || this.t('error.block_medication'));
         }
     },
     
@@ -1837,11 +1891,11 @@ const app = {
     async unblockMedication(medId) {
         try {
             await this.api(`/catalog/medications/${medId}/unblock`, 'POST');
-            this.showSuccess('Medication unblocked');
+            this.showSuccess(this.t('success.medication_unblocked'));
             await this.loadMedicationCatalog();
             await this.loadMedications();
         } catch (error) {
-            this.showError(error.message || 'Failed to unblock medication');
+            this.showError(error.message || this.t('error.unblock_medication'));
         }
     },
     
@@ -1852,11 +1906,11 @@ const app = {
         if (!confirm(`Delete medication "${name}"? This cannot be undone if no logs reference it.`)) return;
         try {
             await this.api(`/catalog/medications/${medId}`, 'DELETE');
-            this.showSuccess('Medication deleted');
+            this.showSuccess(this.t('success.medication_deleted'));
             await this.loadMedicationCatalog();
             await this.loadMedications();
         } catch (error) {
-            this.showError(error.message || 'Failed to delete medication');
+            this.showError(error.message || this.t('error.delete_medication'));
         }
     },
     
@@ -1873,7 +1927,7 @@ const app = {
             this.renderTemplateCatalog(templates);
         } catch (error) {
             const el = document.getElementById('templateCatalog');
-            if (el) el.innerHTML = '<p>Failed to load template catalog.</p>';
+            if (el) el.innerHTML = `<p>${this.t('error.load_template_catalog')}</p>`;
         }
     },
     
@@ -1885,7 +1939,7 @@ const app = {
         if (!container) return;
         
         if (!templates || templates.length === 0) {
-            container.innerHTML = '<p>No meal templates. Add one to enable meal logging.</p>';
+            container.innerHTML = `<p>${this.t('catalog.no_templates')}</p>`;
             return;
         }
         
@@ -1920,7 +1974,7 @@ const app = {
     },
     
     showAddTemplateForm() {
-        document.getElementById('templateModalTitle').textContent = 'Add Meal Template';
+        document.getElementById('templateModalTitle').textContent = this.t('template.add');
         document.getElementById('tplFormId').value = '';
         document.getElementById('tplFormMode').value = 'create';
         document.getElementById('tplFormName').value = '';
@@ -1930,7 +1984,7 @@ const app = {
     },
     
     showEditTemplateForm(tplId, name, icon, sortOrder) {
-        document.getElementById('templateModalTitle').textContent = 'Edit Meal Template';
+        document.getElementById('templateModalTitle').textContent = this.t('template.edit');
         document.getElementById('tplFormId').value = tplId;
         document.getElementById('tplFormMode').value = 'edit';
         document.getElementById('tplFormName').value = name;
@@ -1958,10 +2012,10 @@ const app = {
         try {
             if (mode === 'create') {
                 await this.api('/catalog/templates', 'POST', payload);
-                this.showSuccess('Template added');
+                this.showSuccess(this.t('success.template_added'));
             } else {
                 await this.api(`/catalog/templates/${tplId}`, 'PATCH', payload);
-                this.showSuccess('Template updated');
+                this.showSuccess(this.t('success.template_updated'));
             }
             this.closeTemplateModal();
             await this.loadTemplateCatalog();
@@ -1969,7 +2023,7 @@ const app = {
             this.state.mealTemplates = await this.api('/catalog/templates');
             this.renderMealCards();
         } catch (error) {
-            this.showError(error.message || 'Failed to save template');
+            this.showError(error.message || this.t('error.save_template'));
         }
     },
     
@@ -1977,24 +2031,24 @@ const app = {
         if (!confirm(`Block template "${name}"? It will not appear as a meal card.`)) return;
         try {
             await this.api(`/catalog/templates/${tplId}/block`, 'POST');
-            this.showSuccess('Template blocked');
+            this.showSuccess(this.t('success.template_blocked'));
             await this.loadTemplateCatalog();
             this.state.mealTemplates = await this.api('/catalog/templates');
             this.renderMealCards();
         } catch (error) {
-            this.showError(error.message || 'Failed to block template');
+            this.showError(error.message || this.t('error.block_template'));
         }
     },
     
     async unblockTemplate(tplId) {
         try {
             await this.api(`/catalog/templates/${tplId}/unblock`, 'POST');
-            this.showSuccess('Template unblocked');
+            this.showSuccess(this.t('success.template_unblocked'));
             await this.loadTemplateCatalog();
             this.state.mealTemplates = await this.api('/catalog/templates');
             this.renderMealCards();
         } catch (error) {
-            this.showError(error.message || 'Failed to unblock template');
+            this.showError(error.message || this.t('error.unblock_template'));
         }
     },
     
@@ -2002,12 +2056,12 @@ const app = {
         if (!confirm(`Delete template "${name}"? This cannot be undone if no logs reference it.`)) return;
         try {
             await this.api(`/catalog/templates/${tplId}`, 'DELETE');
-            this.showSuccess('Template deleted');
+            this.showSuccess(this.t('success.template_deleted'));
             await this.loadTemplateCatalog();
             this.state.mealTemplates = await this.api('/catalog/templates');
             this.renderMealCards();
         } catch (error) {
-            this.showError(error.message || 'Failed to delete template');
+            this.showError(error.message || this.t('error.delete_template'));
         }
     },
     
@@ -2027,7 +2081,7 @@ const app = {
             const keys = Object.keys(translations).sort();
             
             if (keys.length === 0) {
-                container.innerHTML = '<p>No translations for this locale.</p>';
+                container.innerHTML = `<p>${this.t('i18n.no_translations')}</p>`;
                 return;
             }
             
@@ -2044,7 +2098,7 @@ const app = {
                     <tbody>${rows}</tbody>
                 </table>`;
         } catch (error) {
-            container.innerHTML = '<p>Failed to load translations.</p>';
+            container.innerHTML = `<p>${this.t('error.load_translations')}</p>`;
         }
     },
     
