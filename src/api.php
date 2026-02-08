@@ -61,7 +61,7 @@ class MealAPI {
         // Get food quantities for each meal
         foreach ($meals as &$meal) {
             $meal['foods'] = db()->query(
-                "SELECT fq.*, fc.name as food_name, fc.category
+                "SELECT fq.*, fc.name as food_name, fc.translation_key as food_translation_key, fc.category
                  FROM food_quantities fq
                  JOIN food_catalog fc ON fq.food_catalog_id = fc.id
                  WHERE fq.meal_log_id = ?
@@ -1329,7 +1329,7 @@ class HistoryAPI {
         // Attach foods to each meal
         foreach ($meals as &$meal) {
             $meal['foods'] = db()->query(
-                "SELECT fq.food_catalog_id, fq.quantity_decimal, fc.name as food_name
+                "SELECT fq.food_catalog_id, fq.quantity_decimal, fc.name as food_name, fc.translation_key as food_translation_key
                  FROM food_quantities fq
                  LEFT JOIN food_catalog fc ON fq.food_catalog_id = fc.id
                  WHERE fq.meal_log_id = ?",

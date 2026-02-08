@@ -1,12 +1,12 @@
 <?php
 /**
  * Come-Come Configuration
- * Version 0.200
+ * Version 0.210
  */
 
 // Environment
 define('APP_ENV', getenv('APP_ENV') ?: 'production'); // production, development
-define('APP_VERSION', '0.200');
+define('APP_VERSION', '0.210');
 
 // Paths
 define('ROOT_PATH', dirname(__DIR__));

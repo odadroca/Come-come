@@ -1,7 +1,7 @@
 /**
  * Come-Come PWA Application
- * Version: 0.200
- * Sprint 20 - i18n Meal/Food Remediation + Simplified Schema
+ * Version: 0.210
+ * Sprint 21 - i18n Completion: Confirm Dialogs & Food Catalog
  */
 
 const app = {
@@ -380,10 +380,12 @@ const app = {
         this.state.foods.forEach(food => {
             const div = document.createElement('div');
             div.className = 'food-quantity-input';
+            // Sprint 21: Translate food name using translation_key, fallback to raw name
+            const foodName = food.translation_key ? this.t(food.translation_key) : food.name;
             // Sprint 20: Translate food category
             const categoryLabel = this.t('food.category.' + food.category);
             div.innerHTML = `
-                <label>${this.escapeHtml(food.name)} <small>(${categoryLabel})</small></label>
+                <label>${this.escapeHtml(foodName)} <small>(${categoryLabel})</small></label>
                 <div class="quantity-slider-container" id="slider-container-${food.id}">
                     <input type="range" 
                            class="quantity-slider" 
@@ -652,9 +654,11 @@ const app = {
             <article>
                 <h4>${this.escapeHtml(meal.meal_icon || '')} ${mealName}</h4>
                 <ul>
-                    ${meal.foods.map(food => `
-                        <li>${this.escapeHtml(food.food_name)}: ${food.quantity_decimal}</li>
-                    `).join('')}
+                    ${meal.foods.map(food => {
+                        // Sprint 21: Translate food name using translation_key
+                        const foodName = food.food_translation_key ? this.t(food.food_translation_key) : food.food_name;
+                        return `<li>${this.escapeHtml(foodName)}: ${food.quantity_decimal}</li>`;
+                    }).join('')}
                 </ul>
                 ${meal.note ? `<p><em>${this.escapeHtml(meal.note)}</em></p>` : ''}
                 <div>
@@ -790,9 +794,14 @@ const app = {
                 html += day.meals.map(m => {
                     // Sprint 20: Use translation_key for meal name
                     const mealName = m.meal_translation_key ? this.t(m.meal_translation_key) : (m.meal_name || this.t('meal.default'));
+                    // Sprint 21: Translate food names
+                    const foodList = m.foods.map(f => {
+                        const foodName = f.food_translation_key ? this.t(f.food_translation_key) : f.food_name;
+                        return this.escapeHtml(foodName) + ' (' + f.quantity_decimal + ')';
+                    }).join(', ');
                     return `
                     <p>${this.escapeHtml(m.meal_icon || '')} <strong>${mealName}</strong>: 
-                    ${m.foods.map(f => this.escapeHtml(f.food_name) + ' (' + f.quantity_decimal + ')').join(', ')}
+                    ${foodList}
                     ${m.is_reviewed ? ' ✓' : ''}
                     </p>`;
                 }).join('');
@@ -1509,9 +1518,10 @@ const app = {
     
     /**
      * Show PIN reset form
+     * Sprint 21: Translated modal title
      */
     showResetPinForm(userId, name) {
-        document.getElementById('pinModalTitle').textContent = `Reset PIN — ${name}`;
+        document.getElementById('pinModalTitle').textContent = `${this.t('user.reset_pin')} — ${name}`;
         document.getElementById('pinFormUserId').value = userId;
         document.getElementById('pinFormNewPin').value = '';
         document.getElementById('pinFormNewPinConfirm').value = '';
@@ -1555,7 +1565,7 @@ const app = {
      * Block user
      */
     async blockUser(userId, name) {
-        if (!confirm(`Block user "${name}"? They will not be able to log in.`)) return;
+        if (!confirm(this.t('confirm.block_user'))) return;
         
         try {
             await this.api(`/users/${userId}/block`, 'POST');
@@ -1583,7 +1593,7 @@ const app = {
      * Delete user
      */
     async deleteUser(userId, name) {
-        if (!confirm(`Delete user "${name}"? This cannot be undone if the user has no historical data.`)) return;
+        if (!confirm(this.t('confirm.delete_user'))) return;
         
         try {
             await this.api(`/users/${userId}`, 'DELETE');
@@ -1712,7 +1722,7 @@ const app = {
      * Block food
      */
     async blockFood(foodId, name) {
-        if (!confirm(`Block food "${name}"? It will not appear in meal logging.`)) return;
+        if (!confirm(this.t('confirm.block_food'))) return;
         try {
             await this.api(`/catalog/foods/${foodId}/block`, 'POST');
             this.showSuccess(this.t('success.food_blocked'));
@@ -1741,7 +1751,7 @@ const app = {
      * Delete food
      */
     async deleteFood(foodId, name) {
-        if (!confirm(`Delete food "${name}"? This cannot be undone if the food has no historical data.`)) return;
+        if (!confirm(this.t('confirm.delete_food'))) return;
         try {
             await this.api(`/catalog/foods/${foodId}`, 'DELETE');
             this.showSuccess(this.t('success.food_deleted'));
@@ -1874,7 +1884,7 @@ const app = {
      * Block medication
      */
     async blockMedication(medId, name) {
-        if (!confirm(`Block medication "${name}"? It will not appear in medication logging.`)) return;
+        if (!confirm(this.t('confirm.block_medication'))) return;
         try {
             await this.api(`/catalog/medications/${medId}/block`, 'POST');
             this.showSuccess(this.t('success.medication_blocked'));
@@ -1903,7 +1913,7 @@ const app = {
      * Delete medication
      */
     async deleteMedication(medId, name) {
-        if (!confirm(`Delete medication "${name}"? This cannot be undone if no logs reference it.`)) return;
+        if (!confirm(this.t('confirm.delete_medication'))) return;
         try {
             await this.api(`/catalog/medications/${medId}`, 'DELETE');
             this.showSuccess(this.t('success.medication_deleted'));
@@ -2028,7 +2038,7 @@ const app = {
     },
     
     async blockTemplate(tplId, name) {
-        if (!confirm(`Block template "${name}"? It will not appear as a meal card.`)) return;
+        if (!confirm(this.t('confirm.block_template'))) return;
         try {
             await this.api(`/catalog/templates/${tplId}/block`, 'POST');
             this.showSuccess(this.t('success.template_blocked'));
@@ -2053,7 +2063,7 @@ const app = {
     },
     
     async deleteTemplate(tplId, name) {
-        if (!confirm(`Delete template "${name}"? This cannot be undone if no logs reference it.`)) return;
+        if (!confirm(this.t('confirm.delete_template'))) return;
         try {
             await this.api(`/catalog/templates/${tplId}`, 'DELETE');
             this.showSuccess(this.t('success.template_deleted'));
