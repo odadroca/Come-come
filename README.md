@@ -1,4 +1,4 @@
-# Come-Come v0.210 — Family Meal Tracking System
+# Come-Come v0.240 — Family Meal Tracking System
 
 **For neuro-divergent children. Frictionless logging, visibility without gamification.**
 
@@ -179,7 +179,7 @@ bash deploy/install-homeserver.sh
 ## Project Structure
 
 ```
-comecome-v0.210/
+comecome-v0.240/
 ├── assets/
 │   ├── app.js          	# Main application (~2200 lines)
 │   ├── styles.css      	# Custom styles
@@ -220,7 +220,14 @@ comecome-v0.210/
 
 ## Version History
 
-### v0.210 — Sprint 21 (Current)
+### v0.240 — Sprint 24 (Current)
+- **Meal template food assignment** — Guardian Tools interface for managing which foods appear in each meal template
+- **Template-specific food lists** — Meal modal now shows only foods assigned to selected template (not full catalog)
+- **Food ordering** — Assignable sort order for foods within each template
+- **Backend API** — New endpoints: GET/POST `/catalog/templates/{id}/foods`
+- **Seeded assignments** — Default food assignments for 6 meal templates (Breakfast, Snacks, Lunch, Dinner)
+
+### v0.230 — Sprint 23
 - **Confirm dialogs i18n** — All 8 block/delete confirmations translated
 - **Food catalog i18n** — Foods now have translation_key for localized names
 - **PIN reset modal** — Title now translated
@@ -380,6 +387,6 @@ For issues or feature requests, contact the developer.
 
 ---
 
-**Version:** 0.210  
-**Sprint:** 21  
-**i18n Coverage:** ~98%
+**Version:** 0.240  
+**Sprint:** 24  
+**i18n Coverage:** ~98% (256 keys per locale)

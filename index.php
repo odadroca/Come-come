@@ -500,6 +500,21 @@ try {
         jsonResponse(['success' => true]);
     }
     
+    // Sprint 24: Meal template foods management endpoints
+    if (preg_match('#^/catalog/templates/(\d+)/foods$#', $uri, $matches) && $method === 'GET') {
+        requireAuth();
+        $templateId = $matches[1];
+        $foods = MealTemplateAPI::getTemplateFoods($templateId);
+        jsonResponse($foods);
+    }
+    
+    if (preg_match('#^/catalog/templates/(\d+)/foods$#', $uri, $matches) && $method === 'POST') {
+        $session = requireGuardian();
+        $templateId = $matches[1];
+        MealTemplateAPI::setTemplateFoods($templateId, $input, $session['user_id']);
+        jsonResponse(['success' => true]);
+    }
+    
     // Medication catalog endpoints
     if ($uri === '/catalog/medications' && $method === 'GET') {
         requireGuardian();

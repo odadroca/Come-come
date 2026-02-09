@@ -1285,6 +1285,93 @@ class MealTemplateAPI {
         
         return true;
     }
+    
+    /**
+     * Sprint 24: Get foods assigned to a meal template
+     * 
+     * @param int $templateId
+     * @return array Foods with {id, food_catalog_id, food_name, translation_key, sort_order}
+     */
+    public static function getTemplateFoods($templateId) {
+        $foods = db()->query(
+            "SELECT mtf.id, mtf.food_catalog_id, mtf.sort_order,
+                    fc.name AS food_name, fc.translation_key
+             FROM meal_template_foods mtf
+             JOIN food_catalog fc ON mtf.food_catalog_id = fc.id
+             WHERE mtf.meal_template_id = ?
+             ORDER BY mtf.sort_order",
+            [$templateId]
+        );
+        return $foods;
+    }
+    
+    /**
+     * Sprint 24: Set foods for a meal template (replaces existing assignments)
+     * 
+     * @param int $templateId
+     * @param array $data {foods: [{food_catalog_id, sort_order}]}
+     * @param int $userId Guardian making changes
+     * @return bool
+     */
+    public static function setTemplateFoods($templateId, $data, $userId) {
+        // Verify template exists
+        $tpl = db()->queryOne("SELECT * FROM meal_templates WHERE id = ?", [$templateId]);
+        if (!$tpl) {
+            throw new Exception('Meal template not found', 404);
+        }
+        
+        if (!isset($data['foods']) || !is_array($data['foods'])) {
+            throw new Exception('Missing required field: foods', 400);
+        }
+        
+        // Validate food assignments
+        foreach ($data['foods'] as $food) {
+            if (!isset($food['food_catalog_id']) || !is_numeric($food['food_catalog_id'])) {
+                throw new Exception('Each food must have food_catalog_id', 400);
+            }
+            
+            // Verify food exists
+            $foodExists = db()->queryOne(
+                "SELECT id FROM food_catalog WHERE id = ?",
+                [$food['food_catalog_id']]
+            );
+            if (!$foodExists) {
+                throw new Exception('Food catalog ID ' . $food['food_catalog_id'] . ' not found', 404);
+            }
+        }
+        
+        // Transaction: delete old assignments, insert new ones
+        db()->beginTransaction();
+        try {
+            // Delete existing assignments
+            db()->execute(
+                "DELETE FROM meal_template_foods WHERE meal_template_id = ?",
+                [$templateId]
+            );
+            
+            // Insert new assignments
+            foreach ($data['foods'] as $idx => $food) {
+                $sortOrder = isset($food['sort_order']) ? (int)$food['sort_order'] : ($idx + 1);
+                db()->insert(
+                    "INSERT INTO meal_template_foods (meal_template_id, food_catalog_id, sort_order)
+                     VALUES (?, ?, ?)",
+                    [$templateId, $food['food_catalog_id'], $sortOrder]
+                );
+            }
+            
+            db()->commit();
+            
+            Auth::logAudit('TEMPLATE_FOODS_UPDATED', 'meal_template_foods', $templateId, $userId, [
+                'template_name' => $tpl['name'],
+                'food_count' => count($data['foods'])
+            ]);
+            
+            return true;
+        } catch (Exception $e) {
+            db()->rollback();
+            throw $e;
+        }
+    }
 }
 
 /**

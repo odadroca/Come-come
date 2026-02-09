@@ -354,15 +354,24 @@ const app = {
      * Open meal modal
      * Sprint 20: Use translation_key for localized modal title
      */
-    openMealModal(template) {
+    async openMealModal(template) {
         // Guard: need a selected child to log meals
         if (!this.state.selectedChild) {
             this.showError(this.t('error.no_child_selected'));
             return;
         }
         
+        // Sprint 24: Fetch foods assigned to this template
+        let templateFoods;
+        try {
+            templateFoods = await this.api(`/catalog/templates/${template.id}/foods`);
+        } catch (err) {
+            this.showError(this.t('error.load_foods'));
+            return;
+        }
+        
         // Guard: need foods to log meals
-        if (!this.state.foods || this.state.foods.length === 0) {
+        if (!templateFoods || templateFoods.length === 0) {
             this.showError(this.t('error.no_foods_available'));
             return;
         }
@@ -377,34 +386,33 @@ const app = {
         const container = document.getElementById('foodQuantityInputs');
         container.innerHTML = '';
         
-        this.state.foods.forEach(food => {
+        // Sprint 24: Use template-assigned foods (sorted by sort_order)
+        templateFoods.forEach(food => {
             const div = document.createElement('div');
             div.className = 'food-quantity-input';
-            // Sprint 21: Translate food name using translation_key, fallback to raw name
-            const foodName = food.translation_key ? this.t(food.translation_key) : food.name;
-            // Sprint 20: Translate food category
-            const categoryLabel = this.t('food.category.' + food.category);
+            // Sprint 21: Translate food name using translation_key, fallback to food_name
+            const foodName = food.translation_key ? this.t(food.translation_key) : food.food_name;
             div.innerHTML = `
-                <label>${this.escapeHtml(foodName)} <small>(${categoryLabel})</small></label>
-                <div class="quantity-slider-container" id="slider-container-${food.id}">
+                <label>${this.escapeHtml(foodName)}</label>
+                <div class="quantity-slider-container" id="slider-container-${food.food_catalog_id}">
                     <input type="range" 
                            class="quantity-slider" 
-                           id="slider-${food.id}" 
+                           id="slider-${food.food_catalog_id}" 
                            min="0" max="5" step="0.25" value="0"
-                           oninput="app.updateSliderDisplay(${food.id})">
-                    <span class="quantity-display" id="display-${food.id}">0</span>
-                    <a href="#" class="quantity-more-link" onclick="app.showQuantityInput(${food.id}); return false;" title="Enter larger quantity">+</a>
+                           oninput="app.updateSliderDisplay(${food.food_catalog_id})">
+                    <span class="quantity-display" id="display-${food.food_catalog_id}">0</span>
+                    <a href="#" class="quantity-more-link" onclick="app.showQuantityInput(${food.food_catalog_id}); return false;" title="Enter larger quantity">+</a>
                 </div>
-                <div class="quantity-input-container" id="input-container-${food.id}" style="display:none;">
+                <div class="quantity-input-container" id="input-container-${food.food_catalog_id}" style="display:none;">
                     <input type="number" 
                            class="quantity-number-input"
-                           id="input-${food.id}" 
+                           id="input-${food.food_catalog_id}" 
                            min="0" max="99" step="0.25" value="0"
-                           oninput="app.updateInputDisplay(${food.id})">
-                    <span class="quantity-display" id="input-display-${food.id}">0</span>
-                    <a href="#" class="quantity-slider-link" onclick="app.showQuantitySlider(${food.id}); return false;" title="Use slider">◀</a>
+                           oninput="app.updateInputDisplay(${food.food_catalog_id})">
+                    <span class="quantity-display" id="input-display-${food.food_catalog_id}">0</span>
+                    <a href="#" class="quantity-slider-link" onclick="app.showQuantitySlider(${food.food_catalog_id}); return false;" title="Use slider">◀</a>
                 </div>
-                <input type="hidden" name="food_${food.id}_quantity" id="quantity-${food.id}" value="0">
+                <input type="hidden" name="food_${food.food_catalog_id}_quantity" id="quantity-${food.food_catalog_id}" value="0">
             `;
             container.appendChild(div);
         });
@@ -1964,6 +1972,7 @@ const app = {
                     <td>${t.sort_order}</td>
                     <td>${isBlocked ? '🚫 Blocked' : '✅ Active'}</td>
                     <td>
+                        <button class="outline" onclick="app.showTemplateFoodsManager(${t.id}, '${nameSafe}')">Manage Foods</button>
                         <button class="outline secondary" onclick="app.showEditTemplateForm(${t.id}, '${nameSafe}', '${iconSafe}', ${t.sort_order})">Edit</button>
                         ${isBlocked ?
                             `<button class="outline" onclick="app.unblockTemplate(${t.id})">Unblock</button>` :
@@ -2204,6 +2213,96 @@ const app = {
      */
     formatDate(date) {
         return date.toISOString().split('T')[0];
+    },
+    
+    /**
+     * Sprint 24: Show template foods manager modal
+     */
+    async showTemplateFoodsManager(templateId, templateName) {
+        this.state.currentTemplateId = templateId;
+        
+        // Fetch assigned foods and all available foods
+        try {
+            const [assignedFoods, allFoods] = await Promise.all([
+                this.api(`/catalog/templates/${templateId}/foods`),
+                this.api('/catalog/foods')
+            ]);
+            
+            this.renderTemplateFoodsManager(templateName, assignedFoods, allFoods);
+            document.getElementById('templateFoodsModal').showModal();
+        } catch (error) {
+            this.showError(this.t('error.load_foods'));
+        }
+    },
+    
+    /**
+     * Sprint 24: Render template foods manager interface
+     */
+    renderTemplateFoodsManager(templateName, assignedFoods, allFoods) {
+        document.getElementById('templateFoodsModalTitle').textContent = 
+            `Manage Foods: ${templateName}`;
+        
+        const container = document.getElementById('templateFoodsContent');
+        
+        // Create checkboxes for all foods
+        const foodCheckboxes = allFoods.map(food => {
+            const isAssigned = assignedFoods.some(af => af.food_catalog_id === food.id);
+            const assignedFood = assignedFoods.find(af => af.food_catalog_id === food.id);
+            const sortOrder = assignedFood ? assignedFood.sort_order : 99;
+            const foodName = food.translation_key ? this.t(food.translation_key) : food.name;
+            
+            return `
+                <label>
+                    <input type="checkbox" 
+                           name="food_${food.id}" 
+                           value="${food.id}"
+                           ${isAssigned ? 'checked' : ''}>
+                    ${this.escapeHtml(foodName)}
+                    <input type="number" 
+                           name="sort_${food.id}" 
+                           min="1" max="99" 
+                           value="${sortOrder}" 
+                           style="width: 60px; margin-left: 10px;"
+                           placeholder="Order">
+                </label>`;
+        }).join('');
+        
+        container.innerHTML = `
+            <form id="templateFoodsForm" onsubmit="app.saveTemplateFoods(event)">
+                ${foodCheckboxes}
+                <button type="submit">Save Food Assignments</button>
+                <button type="button" class="secondary" onclick="document.getElementById('templateFoodsModal').close()">Cancel</button>
+            </form>`;
+    },
+    
+    /**
+     * Sprint 24: Save template food assignments
+     */
+    async saveTemplateFoods(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const foods = [];
+        
+        // Collect checked foods with sort orders
+        for (const [key, value] of formData.entries()) {
+            if (key.startsWith('food_')) {
+                const foodId = parseInt(value);
+                const sortOrder = parseInt(formData.get(`sort_${foodId}`)) || 99;
+                foods.push({ food_catalog_id: foodId, sort_order: sortOrder });
+            }
+        }
+        
+        // Sort by sort_order
+        foods.sort((a, b) => a.sort_order - b.sort_order);
+        
+        try {
+            await this.api(`/catalog/templates/${this.state.currentTemplateId}/foods`, 'POST', { foods });
+            this.showSuccess(this.t('success.template_foods_updated'));
+            document.getElementById('templateFoodsModal').close();
+        } catch (error) {
+            this.showError(this.t('error.update_template_foods'));
+        }
     }
 };
 

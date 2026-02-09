@@ -526,6 +526,7 @@ INSERT INTO i18n (locale, key, value) VALUES
     ('en-UK', 'error.delete_template', 'Failed to delete template'),
     ('en-UK', 'error.load_translations', 'Failed to load translations'),
     ('en-UK', 'error.save_translation', 'Failed to save translation'),
+    ('en-UK', 'error.update_template_foods', 'Failed to update template foods'),
     -- Success messages
     ('en-UK', 'success.meal_logged', 'Meal logged successfully'),
     ('en-UK', 'success.meal_reviewed', 'Meal reviewed'),
@@ -561,6 +562,7 @@ INSERT INTO i18n (locale, key, value) VALUES
     ('en-UK', 'success.template_unblocked', 'Template unblocked'),
     ('en-UK', 'success.template_deleted', 'Template deleted'),
     ('en-UK', 'success.translation_saved', 'Translation saved'),
+    ('en-UK', 'success.template_foods_updated', 'Template foods updated'),
     -- Confirm messages
     ('en-UK', 'confirm.void_meal', 'Void this meal log? It will be hidden from daily view.'),
     ('en-UK', 'confirm.revoke_token', 'Revoke this token? Clinician will lose access immediately.'),
@@ -802,6 +804,7 @@ INSERT INTO i18n (locale, key, value) VALUES
     ('pt-PT', 'error.delete_template', 'Falha ao eliminar modelo'),
     ('pt-PT', 'error.load_translations', 'Falha ao carregar traduções'),
     ('pt-PT', 'error.save_translation', 'Falha ao guardar tradução'),
+    ('pt-PT', 'error.update_template_foods', 'Falha ao atualizar alimentos do modelo'),
     -- Success messages
     ('pt-PT', 'success.meal_logged', 'Refeição registada com sucesso'),
     ('pt-PT', 'success.meal_reviewed', 'Refeição revista'),
@@ -837,6 +840,7 @@ INSERT INTO i18n (locale, key, value) VALUES
     ('pt-PT', 'success.template_unblocked', 'Modelo desbloqueado'),
     ('pt-PT', 'success.template_deleted', 'Modelo eliminado'),
     ('pt-PT', 'success.translation_saved', 'Tradução guardada'),
+    ('pt-PT', 'success.template_foods_updated', 'Alimentos do modelo atualizados'),
     -- Confirm messages
     ('pt-PT', 'confirm.void_meal', 'Anular este registo de refeição? Ficará oculto da visualização diária.'),
     ('pt-PT', 'confirm.revoke_token', 'Revogar este token? O clínico perderá acesso imediatamente.'),
