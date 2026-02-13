@@ -202,6 +202,15 @@
     background: #f8f6ff;
 }
 
+/* Override Pico container so child content matches full-width header/footer */
+.child-interface > .container {
+    max-width: 100%;
+    width: 100%;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    flex: 1;
+}
+
 .child-nav {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
