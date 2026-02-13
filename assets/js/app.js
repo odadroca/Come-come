@@ -26,12 +26,10 @@ function initTheme() {
 
 // Enhanced touch interactions for mobile
 function initTouchInteractions() {
-    // Prevent double-tap zoom on buttons
-    document.querySelectorAll('button, .btn-primary, .btn-secondary').forEach(btn => {
-        btn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            this.click();
-        });
+    // Use CSS touch-action instead of JS preventDefault to avoid
+    // breaking scroll behavior. Only intercept form submit buttons.
+    document.querySelectorAll('button[type="submit"]').forEach(btn => {
+        btn.style.touchAction = 'manipulation';
     });
 }
 

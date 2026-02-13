@@ -133,19 +133,33 @@ document.getElementById('weightForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
     const weight = document.getElementById('weight').value;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳';
 
     fetch('api/weight.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({weight: weight})
+        body: JSON.stringify({weight: parseFloat(weight)})
     })
     .then(r => r.json())
     .then(result => {
         if (result.success) {
             launchConfetti();
             vibrate([50, 100, 50]);
-            document.getElementById('successModal').showModal();
+            setTimeout(function() {
+                document.getElementById('successModal').showModal();
+            }, 600);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '<?php echo t('save'); ?> 🌱';
+            alert('<?php echo t('error_generic'); ?>');
         }
+    })
+    .catch(function() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '<?php echo t('save'); ?> 🌱';
+        alert('<?php echo t('error_generic'); ?>');
     });
 });
 

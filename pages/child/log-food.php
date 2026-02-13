@@ -76,7 +76,7 @@ ob_start();
                     <span style="font-size:1.5rem;"><?php echo $mealEmojis[$meal['name_key']] ?? '🍴'; ?></span>
                     <?php echo t($meal['name_key']); ?>
                     <?php if ($currentMeal && $currentMeal['id'] == $meal['id']): ?>
-                    <small style="display:block;font-size:0.75rem;opacity:0.8;">(<?php echo t('auto_detected'); ?>)</small>
+                    <?php /* auto-detected indicator removed per user request */ ?>
                     <?php endif; ?>
                 </a>
                 <?php endforeach; ?>
@@ -121,11 +121,9 @@ ob_start();
                     <?php endforeach; ?>
                 </div>
 
-                <div style="text-align:center;margin-top:2rem;">
-                    <button class="btn-secondary" id="addCustomFood">
-                        ➕ <?php echo t('add_custom_food'); ?>
-                    </button>
-                </div>
+                <p style="text-align:center;margin-top:2rem;font-size:0.8rem;opacity:0.5;">
+                    <?php echo t('missing_food_hint'); ?>
+                </p>
             </div>
             <?php endif; ?>
         </section>
@@ -207,6 +205,7 @@ let selectedFood = null;
 let selectedMeal = <?php echo json_encode($selectedMeal); ?>;
 let longPressTimer = null;
 let isLongPress = false;
+let touchStartY = 0;
 
 // Encouragement messages (translated via PHP)
 const encouragements = [
@@ -232,23 +231,29 @@ document.querySelectorAll('.food-card').forEach(card => {
         isLongPress = false;
     });
 
-    // Mobile: long press to favorite
+    // Mobile: track touch position to distinguish scroll from tap
     card.addEventListener('touchstart', function(e) {
         isLongPress = false;
+        touchStartY = e.touches[0].clientY;
         longPressTimer = setTimeout(() => {
             isLongPress = true;
             navigator.vibrate && navigator.vibrate(50);
             toggleFavorite(this.dataset.foodId, this);
-        }, 500);
-    });
+        }, 600);
+    }, {passive: true});
 
-    card.addEventListener('touchend', function() {
+    card.addEventListener('touchend', function(e) {
         clearTimeout(longPressTimer);
-    });
+    }, {passive: true});
 
-    card.addEventListener('touchmove', function() {
-        clearTimeout(longPressTimer);
-    });
+    card.addEventListener('touchmove', function(e) {
+        // If finger moved more than 10px, it's a scroll - cancel everything
+        const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+        if (moveY > 10) {
+            clearTimeout(longPressTimer);
+            isLongPress = false;
+        }
+    }, {passive: true});
 
     // Desktop: right-click to favorite
     card.addEventListener('contextmenu', function(e) {
@@ -260,6 +265,9 @@ document.querySelectorAll('.food-card').forEach(card => {
 // Portion selection
 document.querySelectorAll('.portion-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+        // Disable buttons while saving to prevent double-tap
+        document.querySelectorAll('.portion-btn').forEach(b => b.disabled = true);
+        this.textContent = '⏳';
         logFood(selectedFood.id, this.dataset.portion);
     });
 });
@@ -284,7 +292,27 @@ function toggleFavorite(foodId, element) {
                 if (badge) badge.remove();
             }
         }
+    })
+    .catch(() => {}); // Silent fail for favorites
+}
+
+// Re-enable portion buttons when modal opens
+function resetPortionButtons() {
+    document.querySelectorAll('.portion-btn').forEach((btn, i) => {
+        btn.disabled = false;
+        const emojis = ['🤏', '👌', '👍', '💪'];
+        const labels = [<?php echo json_encode(t('portion_little')); ?>, <?php echo json_encode(t('portion_some')); ?>, <?php echo json_encode(t('portion_lot')); ?>, <?php echo json_encode(t('portion_all')); ?>];
+        btn.innerHTML = '<div style="font-size:3rem;">' + emojis[i] + '</div><div>' + labels[i] + '</div>';
     });
+}
+
+// Reset buttons every time portion modal opens
+const portionModal = document.getElementById('portionModal');
+if (portionModal.addEventListener) {
+    // Use MutationObserver to detect when dialog opens
+    new MutationObserver(function() {
+        if (portionModal.open) resetPortionButtons();
+    }).observe(portionModal, {attributes: true, attributeFilter: ['open']});
 }
 
 // Log food - WITH CELEBRATION
@@ -317,12 +345,25 @@ function logFood(foodId, portion) {
                 streakEl.style.display = 'inline-flex';
             }
 
-            // CONFETTI!
+            // CONFETTI first, then modal after short delay
+            // (dialog top-layer covers confetti, so show confetti first)
             launchConfetti();
             vibrate([50, 100, 50, 100, 50]);
 
-            document.getElementById('successModal').showModal();
+            setTimeout(function() {
+                document.getElementById('successModal').showModal();
+            }, 600);
+        } else {
+            // Show error feedback
+            document.getElementById('portionModal').close();
+            alert('<?php echo t('error_generic'); ?>');
+            resetPortionButtons();
         }
+    })
+    .catch(function() {
+        document.getElementById('portionModal').close();
+        alert('<?php echo t('error_generic'); ?>');
+        resetPortionButtons();
     });
 }
 </script>

@@ -312,6 +312,7 @@
   "empty_today_hint": "Tap below to log your first food of the day",
   "weight_encouragement": "Just a number - you're growing and that's natural!",
   "weight_first_entry_hint": "Add your first entry above to start tracking",
+  "missing_food_hint": "Don't see your food? Ask a guardian to add it!",
 
   "_common": "=== COMMON ===",
   "loading": "Loading...",

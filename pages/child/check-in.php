@@ -155,6 +155,11 @@ ob_start();
 document.getElementById('checkInForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    // Disable submit button to prevent double-tap
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳';
+
     const formData = new FormData(this);
     const data = {
         appetite: formData.get('appetite'),
@@ -173,10 +178,24 @@ document.getElementById('checkInForm').addEventListener('submit', function(e) {
         if (result.success) {
             // Update streak for check-in too
             updateStreak();
+
+            // Confetti first, then modal
             launchConfetti();
             vibrate([50, 100, 50]);
-            document.getElementById('successModal').showModal();
+
+            setTimeout(function() {
+                document.getElementById('successModal').showModal();
+            }, 600);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '<?php echo t('save'); ?> ✅';
+            alert('<?php echo t('error_generic'); ?>');
         }
+    })
+    .catch(function() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '<?php echo t('save'); ?> ✅';
+        alert('<?php echo t('error_generic'); ?>');
     });
 });
 </script>

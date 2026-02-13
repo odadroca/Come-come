@@ -312,6 +312,7 @@
   "empty_today_hint": "Toca abaixo para registar a tua primeira comida do dia",
   "weight_encouragement": "É só um número - estás a crescer e isso é natural!",
   "weight_first_entry_hint": "Adiciona o teu primeiro registo acima para começar",
+  "missing_food_hint": "Não encontras a tua comida? Pede a um guardião para a adicionar!",
 
   "_common": "=== COMUM ===",
   "loading": "A carregar...",
