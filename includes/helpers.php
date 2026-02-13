@@ -20,6 +20,7 @@ function portionToValue($portion) {
  * Sanitize input
  */
 function sanitize($input) {
+    if (!is_string($input)) $input = (string) $input;
     return htmlspecialchars(strip_tags($input), ENT_QUOTES, 'UTF-8');
 }
 

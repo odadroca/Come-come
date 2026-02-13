@@ -25,6 +25,11 @@ $activeUsers = array_filter($users, function($u) { return $u['active'] == 1; });
 $childUsers = array_filter($activeUsers, function($u) { return $u['type'] === 'child'; });
 $guardianUsers = array_filter($activeUsers, function($u) { return $u['type'] === 'guardian'; });
 
+// Safe guardian data for JS (strip sensitive fields)
+$guardianUsersJS = array_map(function($u) {
+    return ['id' => $u['id'], 'name' => $u['name'], 'avatar_emoji' => $u['avatar_emoji']];
+}, array_values($guardianUsers));
+
 // Random fun greeting phrase
 $greetingPhrase = getRandomGreetingPhrase();
 
@@ -103,7 +108,7 @@ document.querySelectorAll('input[name="user_id"]').forEach(radio => {
 
 // Guardian login - shows guardian users and reveals PIN section
 function showGuardianLogin() {
-    const guardianUsers = <?php echo json_encode(array_values($guardianUsers)); ?>;
+    const guardianUsers = <?php echo json_encode($guardianUsersJS); ?>;
     const grid = document.querySelector('.user-grid');
 
     // Replace grid with guardian user cards
