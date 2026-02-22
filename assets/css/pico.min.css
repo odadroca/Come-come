@@ -1,0 +1,81 @@
+/* Minimal CSS Framework - ADHD-Friendly */
+:root {
+  --primary: #4CAF50;
+  --primary-hover: #45a049;
+  --secondary: #2196F3;
+  --danger: #f44336;
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --border: #e0e0e0;
+  --radius: 0.5rem;
+  --spacing: 1rem;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --text: #f5f5f5;
+  --border: #333;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: var(--spacing); }
+h1, h2, h3, h4 { margin-bottom: var(--spacing); font-weight: 600; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+button, .btn-primary, .btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  min-height: 48px;
+}
+
+button, .btn-primary { background: var(--primary); color: white; }
+button:hover, .btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--secondary); color: white; }
+.btn-large { padding: 1rem 2rem; font-size: 1.125rem; width: 100%; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+  min-height: 48px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+table { width: 100%; border-collapse: collapse; margin: var(--spacing) 0; }
+th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; background: var(--border); }
+
+article { background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); padding: var(--spacing); margin: var(--spacing) 0; }
+dialog { border: none; border-radius: var(--radius); padding: 0; max-width: 90vw; }
+dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing); margin-bottom: var(--spacing); }
+.table-responsive { overflow-x: auto; }

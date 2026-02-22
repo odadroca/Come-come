@@ -1,8 +1,1 @@
-db/
-backups/
-.vscode/
-includes/config.php
-data/
-docs/
-.DS_Store
-dbbrowser.php
+db/backup_*.db

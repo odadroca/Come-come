@@ -1,392 +1,218 @@
-# Come-Come v0.240 — Family Meal Tracking System
+# 🍽️ ComeCome v0.8 - ADHD-Friendly Food Tracking
 
-**For neuro-divergent children. Frictionless logging, visibility without gamification.**
+A compassionate nutrition tracking application designed specifically for neuro-divergent children, particularly those with ADHD and medication-induced appetite challenges.
 
-> 🇬🇧 English: "Eat-Eat" | 🇵🇹 Português: "Come-Come"
+## 🎯 Purpose
 
----
+ComeCome helps families monitor their children's eating habits with **minimal friction** and **maximum independence**. Built with input from parents of ADHD children on medication regimes that affect appetite.
 
-## Overview
+## ✨ Key Features
 
-Come-Come is a Progressive Web Application (PWA) designed to help families track meals, medications, and weight for neuro-divergent children. The system prioritizes:
+### For Children
+- **Tap to log, not type** - Big emoji food buttons
+- **Auto-detect meal times** - One less decision to make
+- **Simple portions** - "A little / Some / A lot / All" (no calorie counting)
+- **Favorites rise to top** - Most-used items need fewest taps
+- **Daily check-in** - Track appetite, mood, and medication
+- **Weight tracking** - Simple visual charts
+- **History view** - See what you ate
 
-- **Simplicity** — Minimal cognitive load, streamlined food catalog (5 items)
-- **Visibility** — Guardians can review and export detailed reports
-- **Privacy** — Self-hosted, PIN-based authentication, no external tracking
-- **Internationalization** — Full EN-UK and PT-PT support (~390 translation keys)
+### For Parents/Guardians
+- **Family dashboard** - Visual analytics and trends
+- **Multiple children** - Manage whole family
+- **Clinician reports** - Export as HTML, CSV, or JSON
+- **Guest links** - Time-limited access for doctors
+- **Full data control** - Backup, restore, or delete
 
----
+### ADHD-Friendly Design
+- ✅ Large touch targets (48px+)
+- ✅ Clear visual hierarchy
+- ✅ No overwhelming choices
+- ✅ Dark mode support
+- ✅ `prefers-reduced-motion` respect
+- ✅ Haptic feedback
+- ✅ Offline-first PWA
 
-## Features
-
-### Core Functionality
-- 🍽️ **Meal Logging** — 6 configurable meal templates with quantity sliders (0-5 range)
-- 💊 **Medication Tracking** — Status logging (taken/missed/skipped) with timestamps; visible to guardian
-- ⚖️ **Weight Monitoring** — Daily weight logs with auto-void on same-day updates
-- 📊 **PDF Reports** — Exportable reports for clinician reviews
-
-### User Management
-- 👶 **Child Accounts** — Simplified interface for self-logging
-- 👫 **Guardian Accounts** — Full access to tools, settings, and review
-- 🔐 **PIN Authentication** — 4-digit numeric PINs with lockout protection
-- 🌐 **Guest Tokens** — Time-limited read-only access for clinicians
-
-### Guardian Tools
-- ✅ **Meal Review** — Approve logged meals with audit trail
-- 📋 **Food Catalog** — Simplified 5-item catalog (Soup, Main, Dessert, Drink, Snack)
-- 💾 **Backup & Restore** — Database snapshots with download/restore
-- 🔧 **Database Maintenance** — VACUUM optimization, statistics
-
-### Internationalization (i18n)
-- 🇬🇧 English (UK) — "Eat-Eat"
-- 🇵🇹 Portuguese (PT) — "Come-Come"
-- 📝 **~390 translation keys** — Complete UI coverage (~98%)
-- 🔄 **Live locale switching** — No page reload required
-- 🏷️ **Translation keys** — Meal templates and food catalog items translate automatically
-
----
-
-## Technical Stack
-
-| Component | Technology |
-|-----------|------------|
-| Frontend | Vanilla JS PWA, Pico CSS |
-| Backend | PHP 8.0+ |
-| Database | SQLite 3.35+ |
-| Server | Apache with mod_rewrite |
-
----
-
-## Installation
+## 🚀 Installation
 
 ### Requirements
-- PHP 8.0 or higher
-- SQLite 3.35 or higher
-- Apache with mod_rewrite enabled
-- Write permissions for `data/` directory
+- PHP 7.4+ with SQLite support
+- Any web server (Apache, Nginx, etc.)
+- Modern web browser
 
 ### Quick Start
 
-1. **Upload files** to your web server
-2. **Navigate to** `/install.php`
-3. **Create first guardian** account with PIN
-4. **Add a child** in Guardian Tools → User Management
-5. **Start logging** Child: meals. Guardian: meals, medication, weight.
-
-### Deployment Scripts
+1. **Clone or download** this repository to your web server
+2. **Ensure permissions** on the `db/` directory (writable)
+3. **Access via browser** - The app will auto-initialize the database
+4. **Default login**: Username: "Guardião", PIN: "0000"
 
 ```bash
-# VPS deployment (Ubuntu/Debian)
-bash deploy/install-vps.sh
-
-# Home server deployment
-bash deploy/install-homeserver.sh
+# Example installation
+cd /var/www/html
+git clone [this-repo] comecome
+chmod 755 -R comecome
+chmod 775 comecome/db
+chown www-data:www-data comecome/db
 ```
 
----
+### No Build Step Required!
+This application uses vanilla PHP, SQLite, and pure CSS/JS. Just upload and run.
 
-## Database Schema (Simplified v2)
+## 📱 PWA Installation
 
-### Key Tables
+ComeCome works as a Progressive Web App. On mobile:
+1. Open in browser
+2. Tap "Add to Home Screen"
+3. Use like a native app!
 
-| Table | Purpose |
-|-------|---------|
-| `users` | Authentication (guardian/child/guest) |
-| `children` | Child profiles linked to user accounts |
-| `meal_templates` | 6 default meals with translation keys |
-| `food_catalog` | Simplified 5-item catalog |
-| `meal_logs` | Daily meal records |
-| `food_quantities` | Food amounts per meal |
-| `medication_logs` | Medication status tracking |
-| `weight_logs` | Weight measurements |
-| `i18n` | Translation key-value pairs |
+## 🌍 Internationalization (i18n)
 
-### Meal Templates (Seeded)
+### Built-in Languages
+- 🇵🇹 **Portuguese** (default)
+- 🇬🇧 **English**
 
-| ID | Name (PT) | Translation Key | Icon |
-|----|-----------|-----------------|------|
-| 1 | Breakfast | meal.breakfast | 🍞 |
-| 2 | Morning snack | meal.morning_snack | 🍎 |
-| 3 | Lunch | meal.lunch | 🍝 |
-| 4 | Afternoon snack | meal.afternoon_snack | 🍪 |
-| 5 | Dinner | meal.dinner | 🍛 |
-| 6 | Night snack | meal.night_snack | 🥛 |
+### Adding Your Language
+1. Go to **Guardian Panel → Translations**
+2. Select your target language
+3. Edit translations directly in the interface
+4. Translations are stored in database and override defaults
 
-### Food Catalog (Simplified)
+### Contributing Translations
+ComeCome is designed for easy community translation:
+- All strings use key-based translation (`t('key')`)
+- Translation management UI included
+- JSON files in `locales/` for base translations
+- Database overrides for customization
 
-| ID | Name | Category |
-|----|------|----------|
-| 1 | Soup | starter |
-| 2 | Main | main |
-| 3 | Dessert | dessert |
-| 4 | Drink | drink |
-| 5 | Snack | snack |
+## 📊 Export Formats
 
----
+### HTML Report (Print-Ready)
+Clean, professional format for medical appointments. Includes:
+- Weight timeline with changes
+- Medication adherence
+- Daily meal counts
+- Meals by type
+- Intake by category
 
-## Security
+### CSV Export
+Opens in Excel, Google Sheets, or LibreOffice. Perfect for:
+- Data analysis
+- Custom charts
+- Clinical software import
 
-### Authentication
-- 4-digit PIN-based login
-- Session tokens with 7-day sliding expiry
-- Rate limiting: 5 auth attempts per 5 minutes
-- Guardian lockout: 5 failed attempts → 5-minute cooldown
+### JSON Export
+Complete data structure for:
+- Technical integrations
+- Backup purposes
+- Data portability
 
-### Data Protection
-- SQLite database stored outside web root
-- Prepared statements for SQL injection prevention
-- CSRF protection on state-changing operations
-- Audit logging for all sensitive actions
+## 🔐 Security
 
-### Access Control
-- Role-based permissions (guardian/child/guest)
-- Child accounts: Limited to meal logging
-- Guest tokens: Read-only, time-limited
+- **PIN-based authentication** (child-friendly 4-digit PINs)
+- **Session management** with secure tokens
+- **Guest access tokens** with expiration
+- **SQLite database** - No external DB server needed
+- **Input sanitization** and prepared statements
+- **No external dependencies** for core functionality
 
----
+## 🗄️ Database Schema
 
-## API Endpoints
+ComeCome uses SQLite with a clean, normalized schema:
+- **users** - Children and guardians
+- **meals** - 6 configurable meal types
+- **foods** - Extensible food catalog
+- **food_log** - Daily intake tracking
+- **daily_checkin** - Appetite, mood, medication
+- **weight_log** - Weight tracking
+- **medications** - Medication management
+- **translations** - i18n overrides
+- **guest_tokens** - Temporary clinician access
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/login` | Login with user_id + PIN |
-| POST | `/auth/logout` | End session |
-| GET | `/auth/whoami` | Current session info |
+## 🎨 Customization
 
 ### Meals
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/meals/{child_id}/{date}` | Get meals for date |
-| POST | `/meals` | Log new meal |
-| POST | `/meals/{id}/review` | Mark meal reviewed |
-| POST | `/meals/{id}/void` | Void meal entry |
+Portuguese meals are pre-configured:
+- Pequeno Almoço
+- Lanche da Manhã
+- Almoço
+- Lanche da Tarde
+- Jantar
+- Ceia
 
-### Catalog
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/catalog/templates` | Get meal templates |
-| GET | `/catalog/foods` | Get food catalog |
+Edit meal names via the Translation interface.
 
-### Reports
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/report/{child_id}` | Generate PDF report |
-| GET | `/history/{child_id}/{start}/{end}` | Get date range history |
+### Foods
+60+ foods included with emoji. Categories:
+- Fruits, Vegetables, Proteins, Grains
+- Dairy, Snacks, Drinks, Sweets
 
----
+Add custom foods from the child interface!
 
-## Project Structure
+### Settings
+- Toggle medication visibility for young children
+- Change default language
+- Configure meal times
 
-```
-comecome-v0.240/
-├── assets/
-│   ├── app.js          	# Main application (~2200 lines)
-│   ├── styles.css      	# Custom styles
-│   └── manifest.json   	# PWA manifest
-├── config/
-│   └── config.php          # Application configuration
-├── data/                   # Database storage (created at install)
-├── deploy/
-│   ├── install-vps.sh      # VPS deployment script
-│   └── install-homeserver.sh
-├── docs/
-│   ├── change_log.md       # Version history
-│   ├── code_of_conduct.md  # contribution rules and review expectations
-│   ├── exec_architecture.md # System architecture
-│   ├── file_registry.md    # File inventory
-│   └── security.md         # Security documentation
-├── sql/
-│   └── schema.sql          # Database schema
-│   └── data_seed.sql       # Data seed
-├── src/
-│   ├── api.php             # API handlers
-│   ├── auth.php            # Authentication
-│   ├── backup.php          # Backup/restore
-│   ├── db.php              # Database wrapper
-│   ├── pdf.php             # PDF generation
-│   └── i18n.php            # Internationalization
-├── tests/
-│   └── run-tests.php  		# Test suite
-├── .htaccess           	# URL rewriting
-├── app.html         		# Main SPA template
-├── index.php           	# API router
-├── install.php         	# First-time setup
-├── LICENSE.md           	# Apache License v2.0
-└── README.md               # This file
-```
+## 📖 Usage Guide
 
----
+### First-Time Setup
+1. Log in with default guardian account
+2. Add your children (name, PIN, emoji avatar)
+3. Add medications if needed
+4. Configure settings
 
-## Version History
+### Daily Use (Child)
+1. Tap your name and enter PIN
+2. Select current meal (auto-detected by time)
+3. Tap food emoji
+4. Choose portion size
+5. Done! 🎉
 
-### v0.240 — Sprint 24 (Current)
-- **Meal template food assignment** — Guardian Tools interface for managing which foods appear in each meal template
-- **Template-specific food lists** — Meal modal now shows only foods assigned to selected template (not full catalog)
-- **Food ordering** — Assignable sort order for foods within each template
-- **Backend API** — New endpoints: GET/POST `/catalog/templates/{id}/foods`
-- **Seeded assignments** — Default food assignments for 6 meal templates (Breakfast, Snacks, Lunch, Dinner)
+### Monitoring (Guardian)
+1. View dashboard for insights
+2. Export reports for doctor visits
+3. Generate guest links for clinicians
+4. Manage family settings
 
-### v0.230 — Sprint 23
-- **Confirm dialogs i18n** — All 8 block/delete confirmations translated
-- **Food catalog i18n** — Foods now have translation_key for localized names
-- **PIN reset modal** — Title now translated
-- **UK spelling** — "Optimise" instead of "Optimize"
-- **~98% i18n coverage** — 388 translation keys total
+## 🤝 Contributing
 
-### v0.200 — Sprint 20
-- **Simplified schema** — 5-item food catalog for reduced cognitive load
-- **i18n meal remediation** — Meal templates use translation keys
-- **Localized buttons** — Review/Void buttons now translated
-- **History i18n** — Medication status translated in history view
+This is a FOSS project built with love for families managing ADHD.
 
-### v0.190 — Sprint 19
-- Dynamic JavaScript strings translated (100+ replacements)
-- Error/success messages use t() function
-- Confirmation dialogs localized
+**Ways to contribute:**
+- 🌍 Add translations for your language
+- 🍎 Suggest food items for your culture
+- 🐛 Report bugs or suggestions
+- 📖 Improve documentation
+- 💻 Submit pull requests
 
-### v0.180 — Sprint 18
-- HTML static strings with data-i18n attributes
-- applyTranslations() function for DOM updates
-- Live locale switching
+## 📋 Technical Stack
 
-### v0.170 — Sprint 17
-- Token filter (show 3 by default)
-- Slider UI for meal quantities (0-5 range)
+- **Backend**: Vanilla PHP (no frameworks)
+- **Database**: SQLite3
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Styling**: Custom CSS (ADHD-optimized)
+- **Charts**: Chart.js (CDN)
+- **PWA**: Service Worker + Web Manifest
 
-### v0.160 — Sprint 16
-- Medication visibility configuration
-- child_sees_medications toggle
+**Design Philosophy**: Keep it simple, accessible, and offline-capable.
 
-### v0.150 — Sprint 15
-- Expired token detection
-- Guardian tool header highlight
+## 🏥 Medical Disclaimer
 
-### v0.110-0.140 — Sprints 11-14
-- 16 bug fixes from E2E testing
-- History functionality restored
-- PDF generation fixed
-- Guest URL routing corrected
+ComeCome is a tracking tool, not medical software. Always consult healthcare professionals for medical advice. This tool is meant to facilitate communication with clinicians, not replace it.
+
+## 📄 License
+
+Open Source - Free to use, modify, and distribute.
+
+## ❤️ Acknowledgments
+
+Built for Eduardo and all children navigating ADHD with courage.
+
+Special thanks to parents and caregivers who provided insights into real-world challenges.
 
 ---
 
-## Migration from v0.200
+**Made with 💚 by parents, for parents**
 
-For existing installations:
-
-```sql
--- 1. Add translation_key column to food_catalog
-ALTER TABLE food_catalog ADD COLUMN translation_key TEXT;
-
--- 2. Update default foods
-UPDATE food_catalog SET translation_key = 'food.soup' WHERE id = 1;
-UPDATE food_catalog SET translation_key = 'food.main' WHERE id = 2;
-UPDATE food_catalog SET translation_key = 'food.dessert' WHERE id = 3;
-UPDATE food_catalog SET translation_key = 'food.drink' WHERE id = 4;
-UPDATE food_catalog SET translation_key = 'food.snack' WHERE id = 5;
-
--- 3. Add new confirm dialog keys (see schema.sql for full INSERT statements)
-```
-
-## Migration from v0.190
-
-For installations on v0.190:
-
-```sql
--- Add translation_key column to meal_templates
-ALTER TABLE meal_templates ADD COLUMN translation_key TEXT;
-
--- Update default templates
-UPDATE meal_templates SET translation_key = 'meal.breakfast' WHERE id = 1;
-UPDATE meal_templates SET translation_key = 'meal.morning_snack' WHERE id = 2;
-UPDATE meal_templates SET translation_key = 'meal.lunch' WHERE id = 3;
-UPDATE meal_templates SET translation_key = 'meal.afternoon_snack' WHERE id = 4;
-UPDATE meal_templates SET translation_key = 'meal.dinner' WHERE id = 5;
-UPDATE meal_templates SET translation_key = 'meal.night_snack' WHERE id = 6;
-```
-
-Then add new i18n keys from schema.sql (meal.review, meal.void, meal.pending, meal.default).
-
----
-
-## Development
-
-### Running Tests
-
-```bash
-cd tests
-php run-tests.php
-```
-
-### Adding New Translations
-
-1. Add key to `sql/schema.sql` for both EN-UK and PT-PT
-2. Use `this.t('key.name')` in app.js for dynamic strings
-3. For HTML elements, add `data-i18n="key.name"` attribute
-4. For master data (meals, foods), add `translation_key` column value
-
-### i18n Key Categories
-
-| Category | Example Key | Count |
-|----------|-------------|-------|
-| Error messages | `error.load_users` | ~56 |
-| Success messages | `success.meal_logged` | ~36 |
-| Confirm dialogs | `confirm.void_meal` | 12 |
-| Meal templates | `meal.breakfast` | 6 |
-| Food items | `food.soup` | 5 |
-| Form labels | `form.select` | ~20 |
-| UI elements | `user.edit` | ~40 |
-| Other | Various | ~200+ |
-
----
-
-## License (Apache 2.0)
-This project is licensed under the **Apache License 2.0** (see `LICENSE.md`).
-
-### Key Conditions
-- License and copyright notice
-- State changes
-- Disclose source
-
-### Limitations
-- Trademark use
-- Liability
-- Warranty
-
-## Contact
-- odadroca@acordado.addy.io
-
-## Acknowledgments
-- Contributors: my family
-- Inspirations: my oldest son and his struggle eat (at all), his inability to remember what he ate (or not), at school
-- Libraries / tools:
-  - PHP (built-in networking)
-  - SQLite
-  - Pico CSS (CDN build, used for UI styling)
-
----
-
-## Contributing
-- Fork the Repository
-- Create a Feature Branch
-- Commit Your Changes
-- Push to the Branch
-- Open a Pull Request
-
-## Contribution Guidelines
-- Follow our Code of Conduct (`docs/code_of_conduct.md`)
-- Ensure changes do not break existing behaviors (no automated test suite shipped yet)
-- Follow project coding standards (keep changes minimal, consistent, and readable)
-- Provide clear, concise documentation for new features
-
----
-
-## Support
-
-For issues or feature requests, contact the developer.
-
----
-
-**Version:** 0.240  
-**Sprint:** 24  
-**i18n Coverage:** ~98% (256 keys per locale)
+*"Making food tracking simple, so families can focus on what matters."*
