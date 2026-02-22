@@ -1354,6 +1354,13 @@ dialog article header {
     border-color: #FF9800;
 }
 
+/* Inline style overrides - message boxes in guardian pages */
+[data-theme="dark"] .guardian-interface [style*="background:#ffebee"],
+[data-theme="dark"] .guardian-interface [style*="background:#e8f5e9"],
+[data-theme="dark"] .guardian-interface [style*="background:#fff3e0"] {
+    filter: none;
+}
+
 /* Guardian form inputs on dark */
 [data-theme="dark"] .guardian-interface input[type="text"],
 [data-theme="dark"] .guardian-interface input[type="password"],
