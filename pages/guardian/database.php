@@ -18,6 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             readfile($backupPath);
             exit;
         }
+    } elseif ($action === 'download') {
+        // Direct download of current .db file (no backup copy)
+        if (file_exists(DB_PATH)) {
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="comecome_' . date('Y-m-d') . '.db"');
+            header('Content-Length: ' . filesize(DB_PATH));
+            readfile(DB_PATH);
+            exit;
+        }
     } elseif ($action === 'upload') {
         if (isset($_FILES['dbfile']) && $_FILES['dbfile']['error'] === UPLOAD_ERR_OK) {
             $tmpFile = $_FILES['dbfile']['tmp_name'];
@@ -34,15 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = t('restore_success');
                     $messageType = 'success';
                 } else {
-                    $message = 'Erro ao restaurar a base de dados.';
+                    $message = t('error_database');
                     $messageType = 'error';
                 }
             } else {
-                $message = 'Ficheiro inválido. Apenas ficheiros SQLite (.db) são aceites.';
+                $message = t('error_invalid_input');
                 $messageType = 'error';
             }
         } else {
-            $message = 'Nenhum ficheiro selecionado ou erro no upload.';
+            $message = t('error_generic');
             $messageType = 'error';
         }
     } elseif ($action === 'delete' && ($_POST['confirm'] ?? '') === 'ELIMINAR') {
@@ -66,52 +75,57 @@ ob_start();
         <h1><?php echo t('database_management'); ?></h1>
 
         <?php if ($message): ?>
-        <div style="background:<?php echo $messageType === 'error' ? '#ffebee' : ($messageType === 'warning' ? '#fff3e0' : 'var(--pico-primary-background)'); ?>;padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
+        <div class="alert alert-<?php echo $messageType === 'error' ? 'error' : ($messageType === 'warning' ? 'warning' : 'success'); ?>">
             <?php echo $messageType === 'error' ? '❌' : ($messageType === 'warning' ? '⚠️' : '✅'); ?> <?php echo $message; ?>
         </div>
         <?php endif; ?>
 
         <!-- DB Info -->
         <section class="management-section">
-            <h2>📊 Informação</h2>
-            <p>Tamanho da base de dados: <strong><?php echo $dbSizeStr; ?></strong></p>
+            <h2>📊 <?php echo t('database'); ?></h2>
+            <p><?php echo t('database_management'); ?>: <strong><?php echo $dbSizeStr; ?></strong></p>
         </section>
 
-        <!-- Backup -->
+        <!-- Backup & Download -->
         <section class="management-section">
             <h2>💾 <?php echo t('backup_database'); ?></h2>
-            <p>Criar uma cópia de segurança de todos os dados.</p>
-            <form method="POST">
-                <input type="hidden" name="action" value="backup">
-                <button type="submit" class="btn-primary">💾 <?php echo t('backup_database'); ?></button>
-            </form>
+            <p><?php echo t('backup_description'); ?></p>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                <form method="POST">
+                    <input type="hidden" name="action" value="backup">
+                    <button type="submit" class="btn-primary">💾 <?php echo t('backup_database'); ?></button>
+                </form>
+                <form method="POST">
+                    <input type="hidden" name="action" value="download">
+                    <button type="submit" class="btn-secondary">📥 <?php echo t('download_db'); ?></button>
+                </form>
+            </div>
         </section>
 
         <!-- Upload / Restore -->
         <section class="management-section">
             <h2>📤 <?php echo t('restore_database'); ?></h2>
-            <p>Carregar um ficheiro de base de dados (.db) para restaurar. Um backup automático será criado antes da restauração.</p>
-            <form method="POST" enctype="multipart/form-data" onsubmit="return confirm('Tem a certeza que quer substituir a base de dados atual? Um backup será criado automaticamente.')">
+            <form method="POST" enctype="multipart/form-data" onsubmit="return confirm('<?php echo t('delete_confirmation'); ?>')">
                 <input type="hidden" name="action" value="upload">
                 <label>
-                    Ficheiro .db
+                    <?php echo t('restore_database'); ?> (.db)
                     <input type="file" name="dbfile" accept=".db,.sqlite,.sqlite3" required>
                 </label>
-                <button type="submit" class="btn-primary">📤 Restaurar</button>
+                <button type="submit" class="btn-primary">📤 <?php echo t('restore_database'); ?></button>
             </form>
         </section>
 
         <!-- Delete All -->
         <section class="management-section">
             <h2>🗑️ <?php echo t('delete_all_data'); ?></h2>
-            <p style="color:#f44336;font-weight:600;"><?php echo t('delete_warning'); ?></p>
-            <form method="POST" onsubmit="return confirm('Tem ABSOLUTA certeza? Esta ação NÃO PODE ser desfeita!')">
+            <p class="text-danger" style="font-weight:600;"><?php echo t('delete_warning'); ?></p>
+            <form method="POST" onsubmit="return confirm('<?php echo t('delete_warning'); ?>')">
                 <input type="hidden" name="action" value="delete">
                 <label>
                     <?php echo t('type_delete_confirm'); ?>
                     <input type="text" name="confirm" placeholder="ELIMINAR" required>
                 </label>
-                <button type="submit" class="btn-secondary" style="background:#f44336;">
+                <button type="submit" class="btn-danger">
                     🗑️ <?php echo t('delete_all_data'); ?>
                 </button>
             </form>
