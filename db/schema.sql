@@ -141,11 +141,38 @@ CREATE TABLE IF NOT EXISTS translations (
     PRIMARY KEY (locale, key)
 );
 
+-- Sleep tracking
+CREATE TABLE IF NOT EXISTS sleep_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    log_date DATE NOT NULL,
+    sleep_type TEXT NOT NULL CHECK(sleep_type IN ('night', 'nap')),
+    sleep_start DATETIME,
+    sleep_end DATETIME,
+    quality INTEGER CHECK(quality BETWEEN 1 AND 5),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Sleep interruptions (0..N per sleep session)
+CREATE TABLE IF NOT EXISTS sleep_interruptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sleep_log_id INTEGER NOT NULL,
+    wake_time DATETIME NOT NULL,
+    back_to_sleep_time DATETIME,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sleep_log_id) REFERENCES sleep_log(id) ON DELETE CASCADE
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_food_log_user_date ON food_log(user_id, log_date);
 CREATE INDEX IF NOT EXISTS idx_food_log_date ON food_log(log_date);
 CREATE INDEX IF NOT EXISTS idx_weight_log_user_date ON weight_log(user_id, log_date);
 CREATE INDEX IF NOT EXISTS idx_daily_checkin_user_date ON daily_checkin(user_id, check_date);
 CREATE INDEX IF NOT EXISTS idx_guest_tokens_expires ON guest_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sleep_log_user_date ON sleep_log(user_id, log_date);
+CREATE INDEX IF NOT EXISTS idx_sleep_interruptions_log ON sleep_interruptions(sleep_log_id);
 CREATE INDEX IF NOT EXISTS idx_foods_category ON foods(category_id);
 CREATE INDEX IF NOT EXISTS idx_user_favorites_user ON user_favorites(user_id);

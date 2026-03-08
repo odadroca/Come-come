@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     setSetting('show_food_journal', $_POST['show_food_journal'] ?? '0');
     setSetting('show_checkin', $_POST['show_checkin'] ?? '0');
     setSetting('show_weight_tracking', $_POST['show_weight_tracking'] ?? '0');
+    setSetting('show_sleep_tracking', $_POST['show_sleep_tracking'] ?? '0');
     setSetting('show_medication_to_children', $_POST['show_medication'] ?? '0');
     setSetting('default_language', $_POST['default_language'] ?? 'pt');
     $success = true;
@@ -17,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $showFoodJournal = getSetting('show_food_journal', '1');
 $showCheckin = getSetting('show_checkin', '1');
 $showWeightTracking = getSetting('show_weight_tracking', '1');
+$showSleepTracking = getSetting('show_sleep_tracking', '1');
 $showMedication = getSetting('show_medication_to_children', '1');
 $defaultLanguage = getSetting('default_language', 'pt');
 
@@ -64,6 +66,14 @@ ob_start();
                 </label>
                 <small style="opacity:0.7;display:block;margin-top:0.25rem;margin-bottom:0.75rem;">
                     <?php echo t('show_weight_tracking_hint'); ?>
+                </small>
+
+                <label>
+                    <input type="checkbox" name="show_sleep_tracking" value="1" <?php echo $showSleepTracking == '1' ? 'checked' : ''; ?>>
+                    😴 <?php echo t('show_sleep_tracking'); ?>
+                </label>
+                <small style="opacity:0.7;display:block;margin-top:0.25rem;margin-bottom:0.75rem;">
+                    <?php echo t('show_sleep_tracking_hint'); ?>
                 </small>
 
                 <label>

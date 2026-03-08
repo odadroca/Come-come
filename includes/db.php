@@ -41,7 +41,64 @@ function initializeDatabase() {
     $stmt = $db->prepare("INSERT OR IGNORE INTO users (id, name, type, pin) VALUES (?, ?, ?, ?)");
     $stmt->execute([1, 'Guardião', 'guardian', password_hash('0000', PASSWORD_DEFAULT)]);
 
+    // Run migrations for existing databases
+    migrateDatabase($db);
+
     return true;
+}
+
+/**
+ * Run schema migrations for existing databases
+ */
+function migrateDatabase($db) {
+    $version = 1;
+    try {
+        $stmt = $db->prepare("SELECT value FROM settings WHERE \"key\" = 'schema_version'");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        if ($result) $version = (int) $result['value'];
+    } catch (Exception $e) {
+        // settings table may not exist yet
+    }
+
+    if ($version < 2) {
+        // Sprint 2: Add sleep_quality to daily_checkin
+        try {
+            $db->exec("ALTER TABLE daily_checkin ADD COLUMN sleep_quality INTEGER CHECK(sleep_quality BETWEEN 1 AND 5)");
+        } catch (Exception $e) {
+            // Column may already exist
+        }
+
+        // Sprint 2: Create sleep tables
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS sleep_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                log_date DATE NOT NULL,
+                sleep_type TEXT NOT NULL DEFAULT 'night' CHECK(sleep_type IN ('night', 'nap')),
+                sleep_start TEXT,
+                sleep_end TEXT,
+                quality INTEGER CHECK(quality BETWEEN 1 AND 5),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ");
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS sleep_interruptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sleep_log_id INTEGER NOT NULL,
+                wake_time TEXT,
+                back_to_sleep_time TEXT,
+                reason TEXT,
+                FOREIGN KEY (sleep_log_id) REFERENCES sleep_log(id) ON DELETE CASCADE
+            )
+        ");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_sleep_log_user_date ON sleep_log(user_id, log_date)");
+        $db->exec("CREATE INDEX IF NOT EXISTS idx_sleep_interruptions_log ON sleep_interruptions(sleep_log_id)");
+
+        $db->exec("INSERT OR REPLACE INTO settings (\"key\", value) VALUES ('schema_version', '2')");
+    }
 }
 
 /**
@@ -225,16 +282,16 @@ function getFoodLogByDate($userId, $date) {
 /**
  * Save or update daily check-in
  */
-function saveCheckIn($userId, $date, $appetite, $mood, $medication, $notes = null) {
+function saveCheckIn($userId, $date, $appetite, $mood, $medication, $notes = null, $sleepQuality = null) {
     $db = getDB();
 
     $stmt = $db->prepare("
         INSERT OR REPLACE INTO daily_checkin
-        (user_id, check_date, appetite_level, mood_level, medication_taken, notes)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (user_id, check_date, appetite_level, mood_level, medication_taken, notes, sleep_quality)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
 
-    return $stmt->execute([$userId, $date, $appetite, $mood, $medication, $notes]);
+    return $stmt->execute([$userId, $date, $appetite, $mood, $medication, $notes, $sleepQuality]);
 }
 
 /**
@@ -330,4 +387,141 @@ function cleanExpiredTokens() {
     $db = getDB();
     $stmt = $db->prepare("DELETE FROM guest_tokens WHERE expires_at < datetime('now')");
     return $stmt->execute();
+}
+
+/**
+ * Save sleep log entry
+ */
+function saveSleepLog($userId, $date, $type, $start = null, $end = null, $quality = null, $notes = null) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        INSERT INTO sleep_log (user_id, log_date, sleep_type, sleep_start, sleep_end, quality, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+
+    $stmt->execute([$userId, $date, $type, $start, $end, $quality, $notes]);
+    return $db->lastInsertId();
+}
+
+/**
+ * Update sleep log entry
+ */
+function updateSleepLog($id, $start = null, $end = null, $quality = null, $notes = null) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        UPDATE sleep_log SET sleep_start = ?, sleep_end = ?, quality = ?, notes = ?
+        WHERE id = ?
+    ");
+
+    return $stmt->execute([$start, $end, $quality, $notes, $id]);
+}
+
+/**
+ * Delete sleep log entry and its interruptions
+ */
+function deleteSleepLog($id) {
+    $db = getDB();
+    $db->beginTransaction();
+    try {
+        $db->prepare("DELETE FROM sleep_interruptions WHERE sleep_log_id = ?")->execute([$id]);
+        $db->prepare("DELETE FROM sleep_log WHERE id = ?")->execute([$id]);
+        $db->commit();
+        return true;
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Save sleep interruption
+ */
+function saveSleepInterruption($sleepLogId, $wakeTime, $backToSleepTime = null, $reason = null) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        INSERT INTO sleep_interruptions (sleep_log_id, wake_time, back_to_sleep_time, reason)
+        VALUES (?, ?, ?, ?)
+    ");
+
+    $stmt->execute([$sleepLogId, $wakeTime, $backToSleepTime, $reason]);
+    return $db->lastInsertId();
+}
+
+/**
+ * Delete sleep interruption
+ */
+function deleteSleepInterruption($id) {
+    $db = getDB();
+    return $db->prepare("DELETE FROM sleep_interruptions WHERE id = ?")->execute([$id]);
+}
+
+/**
+ * Get sleep data for a specific date (entries + interruptions)
+ */
+function getSleepByDate($userId, $date) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        SELECT * FROM sleep_log
+        WHERE user_id = ? AND log_date = ?
+        ORDER BY sleep_type DESC, sleep_start
+    ");
+    $stmt->execute([$userId, $date]);
+    $entries = $stmt->fetchAll();
+
+    foreach ($entries as &$entry) {
+        $stmt = $db->prepare("
+            SELECT * FROM sleep_interruptions
+            WHERE sleep_log_id = ?
+            ORDER BY wake_time
+        ");
+        $stmt->execute([$entry['id']]);
+        $entry['interruptions'] = $stmt->fetchAll();
+    }
+    unset($entry);
+
+    return $entries;
+}
+
+/**
+ * Get sleep history for dashboard/reports
+ */
+function getSleepHistory($userId, $startDate, $endDate) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        SELECT
+            sl.log_date,
+            sl.sleep_type,
+            sl.sleep_start,
+            sl.sleep_end,
+            sl.quality,
+            (SELECT COUNT(*) FROM sleep_interruptions si WHERE si.sleep_log_id = sl.id) as interruption_count
+        FROM sleep_log sl
+        WHERE sl.user_id = ? AND sl.log_date BETWEEN ? AND ?
+        ORDER BY sl.log_date DESC, sl.sleep_type DESC
+    ");
+    $stmt->execute([$userId, $startDate, $endDate]);
+
+    return $stmt->fetchAll();
+}
+
+/**
+ * Get sleep quality history from daily check-ins
+ */
+function getSleepQualityHistory($userId, $startDate, $endDate) {
+    $db = getDB();
+
+    $stmt = $db->prepare("
+        SELECT check_date, sleep_quality
+        FROM daily_checkin
+        WHERE user_id = ? AND check_date BETWEEN ? AND ? AND sleep_quality IS NOT NULL
+        ORDER BY check_date
+    ");
+    $stmt->execute([$userId, $startDate, $endDate]);
+
+    return $stmt->fetchAll();
 }

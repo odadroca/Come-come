@@ -13,6 +13,8 @@ $medications = $reportData['medications'];
 $dailyMealCount = $reportData['daily_meal_count'];
 $mealsByType = $reportData['meals_by_type'];
 $intakeByCategory = $reportData['intake_by_category'];
+$sleepHistory = $reportData['sleep_history'] ?? [];
+$sleepQualityHistory = $reportData['sleep_quality_history'] ?? [];
 $generatedBy = getCurrentUser()['name'];
 
 header('Content-Type: text/html; charset=UTF-8');
@@ -210,6 +212,36 @@ header('Content-Type: text/html; charset=UTF-8');
                 <tr>
                     <td><?php echo t($cat['name_key']); ?></td>
                     <td><?php echo number_format($cat['total_quantity'], 2); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+
+    <?php if (count($sleepHistory) > 0): ?>
+    <div class="section">
+        <h3><?php echo t('sleep_patterns'); ?></h3>
+        <table>
+            <thead>
+                <tr>
+                    <th><?php echo t('date'); ?></th>
+                    <th><?php echo t('type'); ?></th>
+                    <th><?php echo t('bedtime'); ?></th>
+                    <th><?php echo t('wake_time'); ?></th>
+                    <th><?php echo t('sleep_quality'); ?></th>
+                    <th><?php echo t('interruptions'); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($sleepHistory as $sleep): ?>
+                <tr>
+                    <td><?php echo formatDate($sleep['log_date'], 'd-m-Y'); ?></td>
+                    <td><?php echo $sleep['sleep_type'] === 'night' ? t('night_sleep') : t('nap'); ?></td>
+                    <td><?php echo $sleep['sleep_start'] ?: '—'; ?></td>
+                    <td><?php echo $sleep['sleep_end'] ?: '—'; ?></td>
+                    <td><?php echo $sleep['quality'] ? $sleep['quality'] . '/5' : '—'; ?></td>
+                    <td><?php echo $sleep['interruption_count']; ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

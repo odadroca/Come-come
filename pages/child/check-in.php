@@ -8,6 +8,7 @@ $user = getCurrentUser();
 $today = date('Y-m-d');
 $checkIn = getCheckIn($user['id'], $today);
 $showMedication = getSetting('show_medication_to_children', '1') == '1';
+$showSleep = getSetting('show_sleep_tracking', '1') == '1';
 
 // Get user medications
 $db = getDB();
@@ -79,6 +80,26 @@ ob_start();
                 </div>
             </section>
 
+            <?php if ($showSleep): ?>
+            <!-- Sleep Quality -->
+            <section class="checkin-section">
+                <h3><?php echo t('how_did_you_sleep'); ?></h3>
+                <div class="face-scale">
+                    <?php
+                    $sleepEmojis = ['😫', '😴', '😐', '😊', '🌟'];
+                    for ($i = 1; $i <= 5; $i++):
+                    ?>
+                    <label class="face-option">
+                        <input type="radio" name="sleep_quality" value="<?php echo $i; ?>"
+                               <?php echo ($checkIn && isset($checkIn['sleep_quality']) && $checkIn['sleep_quality'] == $i) ? 'checked' : ''; ?>>
+                        <div class="face-emoji"><?php echo $sleepEmojis[$i-1]; ?></div>
+                        <div class="face-label"><?php echo t('sleep_' . $i); ?></div>
+                    </label>
+                    <?php endfor; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <?php if ($showMedication && count($medications) > 0): ?>
             <!-- Medication -->
             <section class="checkin-section">
@@ -149,7 +170,8 @@ document.getElementById('checkInForm').addEventListener('submit', function(e) {
         appetite: formData.get('appetite'),
         mood: formData.get('mood'),
         medication: formData.get('medication'),
-        notes: formData.get('notes')
+        notes: formData.get('notes'),
+        sleep_quality: formData.get('sleep_quality') || null
     };
 
     fetch('api/check-in.php', {

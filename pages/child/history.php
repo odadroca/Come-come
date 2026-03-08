@@ -74,6 +74,17 @@ ob_start();
                         ?>
                     </span>
                 </div>
+                <?php if (getSetting('show_sleep_tracking', '1') == '1' && isset($checkIn['sleep_quality']) && $checkIn['sleep_quality']): ?>
+                <div class="summary-item">
+                    <span class="summary-label"><?php echo t('sleep_quality'); ?></span>
+                    <span class="summary-value">
+                        <?php
+                        $sleepEmojis = ['😫', '😴', '😐', '😊', '🌟'];
+                        echo $sleepEmojis[$checkIn['sleep_quality'] - 1];
+                        ?>
+                    </span>
+                </div>
+                <?php endif; ?>
                 <?php if (getSetting('show_medication_to_children', '1') == '1'): ?>
                 <div class="summary-item">
                     <span class="summary-label"><?php echo t('medication'); ?></span>

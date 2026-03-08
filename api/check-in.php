@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mood = $data['mood'] ?? null;
     $medication = $data['medication'] ?? 0;
     $notes = $data['notes'] ?? null;
+    $sleepQuality = $data['sleep_quality'] ?? null;
     $date = $data['date'] ?? date('Y-m-d');
 
     if (!$appetite || !$mood) {
@@ -37,7 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jsonResponse(['success' => false, 'error' => 'invalid_mood'], 400);
     }
 
-    if (saveCheckIn($user['id'], $date, $appetite, $mood, $medication, $notes)) {
+    if ($sleepQuality !== null && (!is_numeric($sleepQuality) || $sleepQuality < 1 || $sleepQuality > 5)) {
+        jsonResponse(['success' => false, 'error' => 'invalid_sleep_quality'], 400);
+    }
+
+    if (saveCheckIn($user['id'], $date, $appetite, $mood, $medication, $notes, $sleepQuality)) {
         jsonResponse(['success' => true]);
     } else {
         jsonResponse(['success' => false, 'error' => 'database_error'], 500);

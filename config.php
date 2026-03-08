@@ -27,8 +27,11 @@ date_default_timezone_set('Europe/Lisbon');
 // Start session
 session_start();
 
-// Initialize database if it doesn't exist
+// Initialize database if it doesn't exist, otherwise run migrations
 if (!file_exists(DB_PATH)) {
     require_once __DIR__ . '/includes/db.php';
     initializeDatabase();
+} else {
+    require_once __DIR__ . '/includes/db.php';
+    migrateDatabase(getDB());
 }

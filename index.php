@@ -101,6 +101,11 @@ switch ($page) {
         include 'pages/guardian/manage-medications.php';
         break;
 
+    case 'manage-sleep':
+        requireGuardian();
+        include 'pages/guardian/manage-sleep.php';
+        break;
+
     case 'manage-logs':
         requireGuardian();
         include 'pages/guardian/manage-logs.php';
