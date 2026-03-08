@@ -30,6 +30,21 @@ PHP must have SQLite3 enabled. The database (`db/data.db`) auto-creates on first
 
 **PWA**: Service worker (`sw.js`) caches static assets (cache-first), pages (network-first), and skips API calls.
 
+## Feature Toggles
+
+Guardians can toggle child-facing features on/off via Settings. The `settings` table stores key-value pairs:
+
+| Setting key | Default | Controls |
+|---|---|---|
+| `show_food_journal` | `'1'` | Food logging + history pages |
+| `show_checkin` | `'1'` | Daily check-in page |
+| `show_weight_tracking` | `'1'` | Weight tracking page |
+| `show_medication_to_children` | `'1'` | Medication section within check-in |
+
+Read with `getSetting('key', 'default')`, write with `setSetting('key', 'value')`. Child routes in `index.php` enforce toggles via redirect. The shared footer partial (`pages/child/footer.php`) conditionally renders navigation buttons.
+
+When adding new child-facing features, follow the same pattern: add a setting, guard the route in `index.php`, and add the button to `footer.php`.
+
 ## Key Conventions
 
 - **PHP functions**: camelCase (`getCurrentMeal`, `logFood`)
@@ -42,7 +57,7 @@ PHP must have SQLite3 enabled. The database (`db/data.db`) auto-creates on first
 
 ## Page Organization
 
-- `pages/child/` — Food logging, check-in, weight, history (own data only)
+- `pages/child/` — Food logging, check-in, weight, history (own data only). Shared footer in `footer.php`
 - `pages/guardian/` — Dashboard analytics, user/meal/food/medication management, export (HTML/CSV/JSON), settings, database backup/restore
 - `pages/login.php` — Public auth page
 - `pages/guest-report.php` — Token-validated clinician reports

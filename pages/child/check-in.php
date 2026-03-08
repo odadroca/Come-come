@@ -118,24 +118,7 @@ ob_start();
         </form>
     </main>
 
-    <footer class="child-footer">
-        <a href="?page=log-food" class="footer-btn">
-            <span style="font-size:1.5rem;">🍽️</span>
-            <span><?php echo t('log_food'); ?></span>
-        </a>
-        <a href="?page=check-in" class="footer-btn active">
-            <span style="font-size:1.5rem;">✅</span>
-            <span><?php echo t('check_in'); ?></span>
-        </a>
-        <a href="?page=weight" class="footer-btn">
-            <span style="font-size:1.5rem;">⚖️</span>
-            <span><?php echo t('my_weight'); ?></span>
-        </a>
-        <a href="?page=history" class="footer-btn">
-            <span style="font-size:1.5rem;">📖</span>
-            <span><?php echo t('my_history'); ?></span>
-        </a>
-    </footer>
+    <?php $currentPage = 'check-in'; include __DIR__ . '/footer.php'; ?>
 </div>
 
 <!-- Success Modal - Warm and encouraging -->

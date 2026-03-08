@@ -37,24 +37,40 @@ switch ($page) {
         include 'pages/login.php';
         break;
 
-    // Child pages
+    // Child pages (with feature toggle guards)
     case 'log-food':
         requireAuth();
+        if (isChild() && getSetting('show_food_journal', '1') != '1') {
+            header('Location: index.php');
+            exit;
+        }
         include 'pages/child/log-food.php';
         break;
 
     case 'check-in':
         requireAuth();
+        if (isChild() && getSetting('show_checkin', '1') != '1') {
+            header('Location: index.php');
+            exit;
+        }
         include 'pages/child/check-in.php';
         break;
 
     case 'weight':
         requireAuth();
+        if (isChild() && getSetting('show_weight_tracking', '1') != '1') {
+            header('Location: index.php');
+            exit;
+        }
         include 'pages/child/weight.php';
         break;
 
     case 'history':
         requireAuth();
+        if (isChild() && getSetting('show_food_journal', '1') != '1') {
+            header('Location: index.php');
+            exit;
+        }
         include 'pages/child/history.php';
         break;
 
@@ -126,7 +142,20 @@ switch ($page) {
             if ($user['type'] === 'guardian') {
                 header('Location: index.php?page=dashboard');
             } else {
-                header('Location: index.php?page=log-food');
+                // Redirect to first available child feature
+                $childPages = [
+                    'log-food' => 'show_food_journal',
+                    'check-in' => 'show_checkin',
+                    'weight' => 'show_weight_tracking',
+                ];
+                $defaultPage = 'log-food';
+                foreach ($childPages as $pageName => $settingKey) {
+                    if (getSetting($settingKey, '1') == '1') {
+                        $defaultPage = $pageName;
+                        break;
+                    }
+                }
+                header('Location: index.php?page=' . $defaultPage);
             }
         } else {
             header('Location: index.php?page=login');
