@@ -139,11 +139,17 @@ function getDashboardData($userId, $startDate, $endDate) {
     $stmt->execute([$userId, $startDate, $endDate]);
     $weightHistory = $stmt->fetchAll();
 
+    // Sleep data
+    $sleepHistory = getSleepHistory($userId, $startDate, $endDate);
+    $sleepQualityHistory = getSleepQualityHistory($userId, $startDate, $endDate);
+
     return [
         'daily_intake' => $dailyIntake,
         'check_ins' => $checkIns,
         'top_foods' => $topFoods,
-        'weight_history' => $weightHistory
+        'weight_history' => $weightHistory,
+        'sleep_history' => $sleepHistory,
+        'sleep_quality_history' => $sleepQualityHistory
     ];
 }
 
@@ -232,6 +238,10 @@ function getReportData($userId, $startDate, $endDate) {
     $stmt->execute([$userId, $startDate, $endDate]);
     $intakeByCategory = $stmt->fetchAll();
 
+    // Sleep data
+    $sleepHistory = getSleepHistory($userId, $startDate, $endDate);
+    $sleepQualityHistory = getSleepQualityHistory($userId, $startDate, $endDate);
+
     return [
         'user' => $user,
         'start_date' => $startDate,
@@ -240,7 +250,9 @@ function getReportData($userId, $startDate, $endDate) {
         'medications' => $medications,
         'daily_meal_count' => $dailyMealCount,
         'meals_by_type' => $mealsByType,
-        'intake_by_category' => $intakeByCategory
+        'intake_by_category' => $intakeByCategory,
+        'sleep_history' => $sleepHistory,
+        'sleep_quality_history' => $sleepQualityHistory
     ];
 }
 

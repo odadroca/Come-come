@@ -20,9 +20,9 @@ PHP must have SQLite3 enabled. The database (`db/data.db`) auto-creates on first
 
 **Auth**: PIN-based (4-digit, hashed). Two roles: `child` and `guardian`. Session-based with role middleware (`requireAuth()`, `requireGuardian()`). Guest tokens provide temporary clinician access.
 
-**Database**: SQLite3 via PDO with prepared statements everywhere. Key tables: `users`, `meals`, `foods`, `food_log`, `daily_checkin`, `weight_log`, `settings` (key-value), `guest_tokens`, `translations`.
+**Database**: SQLite3 via PDO with prepared statements everywhere. Key tables: `users`, `meals`, `foods`, `food_log`, `daily_checkin`, `weight_log`, `sleep_log`, `sleep_interruptions`, `settings` (key-value), `guest_tokens`, `translations`. Migrations run via `migrateDatabase()` using `schema_version` setting key.
 
-**API**: JSON endpoints in `api/` (food-log, check-in, weight, favorites). All require auth, support GET/POST/DELETE, enforce user ownership.
+**API**: JSON endpoints in `api/` (food-log, check-in, weight, favorites, sleep). All require auth, support GET/POST/DELETE, enforce user ownership.
 
 **i18n**: Key-based translation from `locales/*.json` files (pt default, en available). Database `translations` table provides runtime overrides. Use `t('key', $params)` for all user-facing strings.
 
@@ -39,6 +39,7 @@ Guardians can toggle child-facing features on/off via Settings. The `settings` t
 | `show_food_journal` | `'1'` | Food logging + history pages |
 | `show_checkin` | `'1'` | Daily check-in page |
 | `show_weight_tracking` | `'1'` | Weight tracking page |
+| `show_sleep_tracking` | `'1'` | Sleep quality in daily check-in |
 | `show_medication_to_children` | `'1'` | Medication section within check-in |
 
 Read with `getSetting('key', 'default')`, write with `setSetting('key', 'value')`. Child routes in `index.php` enforce toggles via redirect. The shared footer partial (`pages/child/footer.php`) conditionally renders navigation buttons.
@@ -58,7 +59,7 @@ When adding new child-facing features, follow the same pattern: add a setting, g
 ## Page Organization
 
 - `pages/child/` — Food logging, check-in, weight, history (own data only). Shared footer in `footer.php`
-- `pages/guardian/` — Dashboard analytics, user/meal/food/medication management, export (HTML/CSV/JSON), settings, database backup/restore
+- `pages/guardian/` — Dashboard analytics, user/meal/food/medication/sleep management, export (HTML/CSV/JSON), settings, database backup/restore
 - `pages/login.php` — Public auth page
 - `pages/guest-report.php` — Token-validated clinician reports
 

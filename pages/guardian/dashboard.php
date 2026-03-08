@@ -78,6 +78,7 @@ ob_start();
                             <th><?php echo t('date'); ?></th>
                             <th><?php echo t('appetite'); ?></th>
                             <th><?php echo t('mood'); ?></th>
+                            <th><?php echo t('sleep_quality'); ?></th>
                             <th><?php echo t('medication'); ?></th>
                             <th><?php echo t('notes'); ?></th>
                         </tr>
@@ -88,6 +89,7 @@ ob_start();
                             <td><?php echo formatDate($checkIn['check_date'], 'd-m-Y'); ?></td>
                             <td><?php echo str_repeat('⭐', $checkIn['appetite_level']); ?></td>
                             <td><?php echo str_repeat('😊', $checkIn['mood_level']); ?></td>
+                            <td><?php echo isset($checkIn['sleep_quality']) && $checkIn['sleep_quality'] ? str_repeat('💤', $checkIn['sleep_quality']) : '—'; ?></td>
                             <td><?php echo $checkIn['medication_taken'] ? '✅' : '❌'; ?></td>
                             <td><?php echo $checkIn['notes'] ? '📝' : '—'; ?></td>
                         </tr>
@@ -98,7 +100,40 @@ ob_start();
         </section>
         <?php endif; ?>
 
-        <!-- 4. Most Eaten Foods -->
+        <!-- 4. Sleep Patterns -->
+        <?php if (!empty($data['sleep_history'])): ?>
+        <section class="dashboard-section">
+            <h2>😴 <?php echo t('sleep_patterns'); ?></h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><?php echo t('date'); ?></th>
+                            <th><?php echo t('type'); ?></th>
+                            <th><?php echo t('bedtime'); ?></th>
+                            <th><?php echo t('wake_time'); ?></th>
+                            <th><?php echo t('sleep_quality'); ?></th>
+                            <th><?php echo t('interruptions'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($data['sleep_history'] as $sleep): ?>
+                        <tr>
+                            <td><?php echo formatDate($sleep['log_date'], 'd-m-Y'); ?></td>
+                            <td><?php echo $sleep['sleep_type'] === 'night' ? '🌙' : '💤'; ?></td>
+                            <td><?php echo $sleep['sleep_start'] ?: '—'; ?></td>
+                            <td><?php echo $sleep['sleep_end'] ?: '—'; ?></td>
+                            <td><?php echo $sleep['quality'] ? $sleep['quality'] . '/5' : '—'; ?></td>
+                            <td><?php echo $sleep['interruption_count']; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- 5. Most Eaten Foods -->
         <?php if (count($data['top_foods']) > 0): ?>
         <section class="dashboard-section">
             <h2><?php echo t('most_eaten_foods'); ?></h2>
@@ -128,7 +163,7 @@ ob_start();
         </section>
         <?php endif; ?>
 
-        <?php if (count($data['check_ins']) == 0 && count($data['top_foods']) == 0 && count($data['weight_history']) == 0 && count($data['daily_intake']) == 0): ?>
+        <?php if (count($data['check_ins']) == 0 && count($data['top_foods']) == 0 && count($data['weight_history']) == 0 && count($data['daily_intake']) == 0 && empty($data['sleep_history'])): ?>
         <p style="text-align:center;padding:3rem;opacity:0.6;">
             <?php echo t('no_data_period'); ?>
         </p>

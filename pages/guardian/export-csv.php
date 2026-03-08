@@ -118,5 +118,24 @@ if (count($reportData['intake_by_category']) > 0) {
     fputcsv($output, []);
 }
 
+// Sleep Patterns
+$sleepHistory = $reportData['sleep_history'] ?? [];
+if (count($sleepHistory) > 0) {
+    fputcsv($output, [t('sleep_patterns')]);
+    fputcsv($output, [t('date'), t('type'), t('bedtime'), t('wake_time'), t('sleep_quality'), t('interruptions')]);
+
+    foreach ($sleepHistory as $sleep) {
+        fputcsv($output, [
+            formatDate($sleep['log_date']),
+            $sleep['sleep_type'] === 'night' ? t('night_sleep') : t('nap'),
+            $sleep['sleep_start'] ?: '—',
+            $sleep['sleep_end'] ?: '—',
+            $sleep['quality'] ? $sleep['quality'] . '/5' : '—',
+            $sleep['interruption_count']
+        ]);
+    }
+    fputcsv($output, []);
+}
+
 fclose($output);
 exit;

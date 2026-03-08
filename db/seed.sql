@@ -120,5 +120,6 @@ INSERT OR IGNORE INTO foods (name_key, emoji, category_id, sort_order) VALUES
 -- Insert default settings
 INSERT OR IGNORE INTO settings (key, value) VALUES
 ('show_medication_to_children', '1'),
+('show_sleep_tracking', '1'),
 ('default_language', 'pt'),
 ('app_name', 'ComeCome');
