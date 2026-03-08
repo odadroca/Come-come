@@ -158,21 +158,29 @@ function getUserFavorites($userId) {
  */
 function toggleFavorite($userId, $foodId) {
     $db = getDB();
+    $db->beginTransaction();
 
-    // Check if already favorite
-    $stmt = $db->prepare("SELECT 1 FROM user_favorites WHERE user_id = ? AND food_id = ?");
-    $stmt->execute([$userId, $foodId]);
+    try {
+        // Check if already favorite
+        $stmt = $db->prepare("SELECT 1 FROM user_favorites WHERE user_id = ? AND food_id = ?");
+        $stmt->execute([$userId, $foodId]);
 
-    if ($stmt->fetch()) {
-        // Remove favorite
-        $stmt = $db->prepare("DELETE FROM user_favorites WHERE user_id = ? AND food_id = ?");
-        $stmt->execute([$userId, $foodId]);
-        return false;
-    } else {
-        // Add favorite
-        $stmt = $db->prepare("INSERT INTO user_favorites (user_id, food_id) VALUES (?, ?)");
-        $stmt->execute([$userId, $foodId]);
-        return true;
+        if ($stmt->fetch()) {
+            // Remove favorite
+            $stmt = $db->prepare("DELETE FROM user_favorites WHERE user_id = ? AND food_id = ?");
+            $stmt->execute([$userId, $foodId]);
+            $db->commit();
+            return false;
+        } else {
+            // Add favorite
+            $stmt = $db->prepare("INSERT INTO user_favorites (user_id, food_id) VALUES (?, ?)");
+            $stmt->execute([$userId, $foodId]);
+            $db->commit();
+            return true;
+        }
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
     }
 }
 

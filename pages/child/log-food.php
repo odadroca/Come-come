@@ -22,8 +22,8 @@ if ($selectedMeal) {
 
     // Mark favorites in foods array
     $favoriteIds = array_column($favorites, 'id');
-    foreach ($foods as &$food) {
-        $food['is_favorite'] = in_array($food['id'], $favoriteIds);
+    foreach ($foods as $key => $food) {
+        $foods[$key]['is_favorite'] = in_array($food['id'], $favoriteIds);
     }
 }
 
@@ -294,9 +294,10 @@ document.querySelectorAll('.food-card').forEach(card => {
         }
     }, {passive: true});
 
-    // Desktop: right-click to favorite
+    // Desktop: right-click to favorite (skip if long-press already fired)
     card.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        if (isLongPress) return;
         toggleFavorite(this.dataset.foodId, this);
     });
 });
@@ -331,8 +332,13 @@ document.querySelectorAll('.portion-btn').forEach(btn => {
     });
 });
 
-// Toggle favorite
+// Toggle favorite (with in-flight tracking to prevent double toggles)
+const favoriteInFlight = new Set();
+
 function toggleFavorite(foodId, element) {
+    if (favoriteInFlight.has(foodId)) return;
+    favoriteInFlight.add(foodId);
+
     fetch('api/favorites.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -340,19 +346,25 @@ function toggleFavorite(foodId, element) {
     })
     .then(r => r.json())
     .then(data => {
+        favoriteInFlight.delete(foodId);
         if (data.success) {
-            element.classList.toggle('is-favorite');
-            const badge = element.querySelector('.favorite-badge');
-            if (data.is_favorite) {
-                if (!badge) {
-                    element.insertAdjacentHTML('beforeend', '<div class="favorite-badge">⭐</div>');
+            // Update all cards with this food ID (favorites section + main grid)
+            document.querySelectorAll('.food-card[data-food-id="' + foodId + '"]').forEach(card => {
+                card.dataset.isFavorite = data.is_favorite ? '1' : '0';
+                card.classList.toggle('is-favorite', data.is_favorite);
+                const badge = card.querySelector('.favorite-badge');
+                if (data.is_favorite) {
+                    if (!badge) card.insertAdjacentHTML('beforeend', '<div class="favorite-badge">⭐</div>');
+                } else {
+                    if (badge) badge.remove();
                 }
-            } else {
-                if (badge) badge.remove();
-            }
+            });
         }
     })
-    .catch(() => {}); // Silent fail for favorites
+    .catch(() => {
+        favoriteInFlight.delete(foodId);
+        navigator.vibrate && navigator.vibrate([100, 50, 100]);
+    });
 }
 
 // Re-enable portion buttons when modal opens
