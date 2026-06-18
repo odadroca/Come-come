@@ -8,6 +8,54 @@ Every sprint explicitly defines a **child boundary** — what the child sees (or
 
 ---
 
+## ▶ Plan of Record — updated 2026-06-19
+
+> **This section is the current source of truth for sequencing and scope.** The detailed
+> "Sprint 0–5" write-ups further below are retained as **task-level reference**, but the
+> original Sprints 3–5 have been **re-sequenced and split** into the plan below, and five
+> open questions have been **decided** (see [`docs/roadmap/DECISIONS.md`](../docs/roadmap/DECISIONS.md)).
+
+### Shipped (v0.9.1, `schema_version = 2`)
+Sprints **0** (bug fixes), **1** (feature-visibility toggles), **2** (sleep tracking) are **done**.
+Footer is at **4 of max 5** items.
+
+### Decisions locked (2026-06-19) — full rationale + citations in `docs/roadmap/DECISIONS.md`
+| # | Decision | Choice |
+|---|---|---|
+| i | Growth reference | **WHO 0–2y + CDC 2–19y hybrid** (+ CDC 2022 Extended BMI). Engine carries BOTH WHO & CDC LMS data, keyed `[standard][metric][sex][age]`. |
+| ii | Height capture | **Fold into child weight page → "Growth"**, toggle-gated, no new footer item. |
+| iii | Privacy (gender/DOB) | **Balanced** — gender+age+percentiles in clinician outputs; exact DOB guardian-side only; **JSON export whitelisted**. |
+| iv | Missing demographics | **Graceful degradation + soft-warn**; enabling `show_percentiles` never blocks. |
+| v | Security priority | New **Security & Deployment Foundations** track (auth/TLS + `.env` + tests) that also unblocks the deferred encryption. |
+
+### Re-sequenced roadmap (next, on top of shipped 0–2)
+| # | Sprint | Effort | Child boundary | Depends on |
+|---|---|---|---|---|
+| **3** | **Clinical Report Hardening + Correlations** — clinician-grade report + dashboard "Insights" + the sleep→next-day-appetite/mood correlation Sprint 2 specced but never built. **No schema / no migration.** | M | Zero | Sprints 0–2 |
+| **4** | **Security & Deployment Foundations — Pt 1: migration/test safety net** — dependency-free `tests/run.php` (getDB / migrate-idempotency / backup-restore). **Lands before any new migration.** | S | Zero (dev tooling) | — |
+| **5** | **Demographics Foundation** — `users.gender` + `users.date_of_birth` (the riskiest auth/identity migration), isolated and additive. | S | Zero (guardian-only) | Sprint 1 |
+| **6** | **Growth Page Foundation** — `height_log`, `calculateBMI`, `show_percentiles` (default OFF); height folded into the weight page → "Growth". | M | 1 optional field, toggle-gated | Sprint 5 |
+| **7** | **Percentiles Engine + WHO/CDC Reference Data** — read-only LMS arrays (WHO 0–2 + CDC 2–19 + CDC 2022 Ext. BMI) + side-effect-free engine, unit-tested. **No UI.** | L | None | Sprints 5–6 |
+| **8** | **Percentiles Display** — dashboard + exports + guest-report; bands/zones/trajectory guardian/clinician-only; **annotate the age-2 WHO→CDC transition** so the z-score jump isn't misread. | M | Child chart unchanged | Sprint 7 |
+| **9** | **Medication Timing Foundation** — `medication_schedules` + `food_log.med_window` auto-stamped at insert. | L | Zero | shipped meds tables |
+| **10** | **Nutrition Intelligence Discovery** (gating spike) — lock recommendation rules, tag-maintenance UX, SQLite read-lock approach. | S | None | Sprint 9 |
+| **11** | **Growth-Support Nutrition Intelligence** — food tags + rule-based panel + clinician summary. **AI/LLM decision pending** — see [`docs/roadmap/SPRINT-11-nutrition-intelligence.md`](../docs/roadmap/SPRINT-11-nutrition-intelligence.md). | XL | Zero child UI | Sprints 8, 9, 10 |
+
+**Security & Deployment Foundations track (decision v):** Sprint 4 is its first deliverable.
+Its remaining parts — PIN brute-force lockout/throttling, `Secure`/`HttpOnly`/`SameSite` cookies,
+session regeneration, deployment TLS guidance, and the `.env`/secrets pattern — form a parallel
+workstream that can land any time after Sprint 4 and **unblocks** the still-**deferred** SQLCipher
+at-rest encryption (scheduled only after this track + an explicit go decision).
+
+### Cross-cutting rules (apply to every sprint — from the roadmap critique)
+- Every `ALTER` in a version-gated `migrateDatabase()` block **and** mirrored in `db/schema.sql`.
+- **Bump `sw.js CACHE_NAME`** whenever a child page or shared asset/JS changes (e.g. the Growth page in Sprint 6).
+- Keep all **four export surfaces** (HTML, CSV, JSON, guest-report) in parity; **whitelist the JSON path** in `export.php` so new sensitive fields don't auto-leak.
+- `pt.json` is **canonical** — real Portuguese clinical strings, key-parity with `en.json` verified each sprint.
+- State the **child boundary** per sprint; footer ≤ 5 items.
+
+---
+
 ## Sprint 0 — Bug Fixes
 
 **Goal:** Fix two reported defects before building anything new.
@@ -198,6 +246,11 @@ All sleep-related labels, emoji descriptions, interruption reasons, chart labels
 
 ## Sprint 3 — Percentiles Foundation
 
+> **⚠ Re-sequenced (2026-06-19).** The Plan of Record above splits this into **Sprint 5
+> (Demographics)** + **Sprint 6 (Growth Page)**, and `manage-users.php` is the route alias —
+> the add/edit form lives in **`pages/guardian/manage-children.php`**. Decisions ii/iii/iv apply.
+> Content below is task-level reference.
+
 **Goal:** Add demographic fields (gender, date of birth), height tracking, and settings infrastructure required before percentile calculations.
 **Child boundary:** One optional height input field added to the existing weight page. No new pages, no new footer buttons.
 
@@ -269,6 +322,10 @@ Gender options, date of birth label, height labels, percentile toggle label, val
 
 ## Sprint 4 — Percentiles Full
 
+> **⚠ Re-sequenced (2026-06-19).** Split into **Sprint 7 (Engine + reference data, no UI)** +
+> **Sprint 8 (Display)**. Per **decision (i)** the reference data is the **WHO 0–2y + CDC 2–19y
+> hybrid** (+ CDC 2022 Extended BMI), **not WHO-only**. Content below is task-level reference.
+
 **Goal:** Implement WHO growth standard percentile calculations and display them in charts and reports.
 **Child boundary:** The child's weight chart remains a simple line chart — no percentile curves shown to the child. Encouraging language only (e.g. "Growing well!" not "Below 3rd percentile").
 
@@ -281,7 +338,7 @@ Store LMS (Lambda-Mu-Sigma) parameters as static PHP arrays in `includes/growth-
 - Height-for-age: 0-228 months (boys and girls)
 - BMI-for-age: 24-228 months (boys and girls)
 
-Source: WHO 2006 (0-5 years) and WHO 2007 (5-19 years). ~2000 rows total.
+Source (per **decision (i)**, 2026-06-19): **hybrid** — WHO 2006 Growth Standards for **0–<24 months**, CDC 2000 Growth Reference for **≥24 months**, plus **CDC 2022 Extended BMI-for-age** for very high BMI. Key arrays `[standard][metric][sex][ageMonths]` and select by age (24-month cutoff). ~2000+ rows. Document source/version/license inline.
 
 ### 4.2 — Percentile calculation engine
 
@@ -319,6 +376,10 @@ Percentile labels, growth standard terminology, zone descriptions, encouraging m
 ---
 
 ## Sprint 5 — Growth-Support Nutrition Intelligence
+
+> **⚠ Re-sequenced (2026-06-19).** Now **Sprint 9 (Medication Timing)** + **Sprint 10 (discovery
+> spike)** + **Sprint 11 (tags + panel)**. **AI/LLM scope is an open decision** — see the dedicated
+> doc [`docs/roadmap/SPRINT-11-nutrition-intelligence.md`](../docs/roadmap/SPRINT-11-nutrition-intelligence.md). Content below is task-level reference.
 
 **Goal:** Add a behind-the-scenes nutrition intelligence layer that provides clinically meaningful insights to guardians and clinicians, WITHOUT adding ANY cognitive load to the child.
 **Child boundary:** Absolutely zero changes to the child UI. Same foods, same portions, same confetti. All new data is invisible metadata.
@@ -530,7 +591,12 @@ Current footer: 4 items. Adding sleep (Sprint 2) would make 5. **Maximum 5 foote
 Default tags cover seed foods. Guardian-added foods default to no tags (opt-in). Prompt guardians to tag new foods but don't block on it.
 
 ### Percentile Data Accuracy
-WHO growth standards are published per month of age. Use linear interpolation of LMS values between data points. Document data source: WHO 2006 (0-5 years), WHO 2007 (5-19 years).
+Reference data is published per month of age; use linear interpolation of LMS values between points.
+Per **decision (i)** the framework is the **WHO 0–<24mo + CDC ≥24mo hybrid** (+ CDC 2022 Extended BMI),
+**not WHO-only**. Note the **age-2 WHO→CDC z-score discontinuity** (2025 AAP study: mean BMI-z drop
+~0.59 at the transition) and **annotate it in the report**. Also define behavior for in-range age but
+out-of-coverage metric (BMI <24mo, weight-for-age >120mo) and cap extreme z-scores. Document
+source/version/license for each dataset.
 
 ### Medication Timing Assumptions
 Default timing offsets are approximations. Individual response to stimulant medication varies significantly. Manual override is essential — defaults are starting points, not prescriptions.
